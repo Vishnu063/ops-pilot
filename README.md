@@ -1,5 +1,7 @@
 # Ops Pilot
 
+[![Validate Ops Pilot](https://github.com/Vishnu063/ops-pilot/actions/workflows/checks.yml/badge.svg)](https://github.com/Vishnu063/ops-pilot/actions/workflows/checks.yml)
+
 **Know what failed. Review a repair. Check that your application responds again.**
 
 Ops Pilot watches **one Docker application**, investigates a failed endpoint,
@@ -10,6 +12,10 @@ Docker state **and** application endpoint after an explicitly approved restart.
 API, model, Kubernetes cluster, n8n or separate monitoring server is required for
 this first flow. Optional local AI explanations are advisory only. This is not a
 production-certified autonomous DevOps engineer.
+
+**Verified:** Python 3.11/3.12/3.13 checks and three real disposable Docker
+acceptance tests passed. [Evidence and remaining limits](docs/VALIDATION.md).
+No customer/EC2 application has been connected or changed.
 
 ## Get started on your Linux server
 
