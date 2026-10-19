@@ -173,8 +173,12 @@ class Pilot:
             else:
                 if not health["healthy"] and not self.failed:
                     self._investigate()
+                    self.failed = True
+                    self._persist()
                     self._notify("application_failed")
                 elif health["healthy"] and self.failed:
+                    self.failed = False
+                    self._persist()
                     self._notify("endpoint_recovered")
                 self.failed = not health["healthy"]
             self._persist()

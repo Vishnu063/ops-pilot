@@ -81,6 +81,16 @@ class DailyTests(unittest.TestCase):
         self.assertFalse(reopened.engine.adapter.mutations)
         with self.assertRaises(ValueError): reopened.action('apply', plan)
 
+    def test_crash_during_delivery_does_not_repeat_the_outage_alert(self):
+        self.pilot.config['alert_url'] = 'https://example.com/private-hook'
+        with patch('ops_pilot.service.deliver', side_effect=KeyboardInterrupt):
+            with self.assertRaises(KeyboardInterrupt): self.pilot.tick()
+        reopened = self.reopen()
+        reopened.tick()
+        self.assertEqual(1, len(reopened.runtime.alerts()))
+        self.assertEqual('attempting', reopened.runtime.alerts()[0]['delivery'])
+        self.assertFalse(reopened.engine.adapter.mutations)
+
     def test_failed_application_after_restart_emits_attention_alert(self):
         plan = self.plan(); self.pilot.action('approve', plan)
         ProbeHandler.status = 503
