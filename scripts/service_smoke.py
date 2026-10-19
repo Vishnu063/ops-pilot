@@ -26,14 +26,14 @@ def run():
     class Handler(http.server.BaseHTTPRequestHandler):
         def log_message(self, *args): pass
         def do_GET(self): self.send_response(200); self.end_headers()
-    http = http.server.ThreadingHTTPServer(('127.0.0.1', 0), Handler)
-    thread = threading.Thread(target=http.serve_forever, daemon=True); thread.start()
-    with tempfile.TemporaryDirectory(prefix='ops-pilot-service-') as home:
+    http_server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), Handler)
+    thread = threading.Thread(target=http_server.serve_forever, daemon=True); thread.start()
+    with tempfile.TemporaryDirectory(prefix='.ops-pilot-service-', dir=Path.home()) as home:
         env = {**os.environ, 'HOME': home}
         config = Path(home) / '.config/ops-pilot/config.json'
         config.parent.mkdir(parents=True)
         config.write_text(json.dumps(dict(name='Systemd CI app', docker_context='default',
-            container='disposable-service-lab', health_url=f'http://127.0.0.1:{http.server_port}/', interval_seconds=15)))
+            container='disposable-service-lab', health_url=f'http://127.0.0.1:{http_server.server_port}/', interval_seconds=15)))
         origin = 'http://127.0.0.1:8767'
         def fresh_token(previous=None):
             for _ in range(80):
@@ -84,7 +84,7 @@ def run():
             subprocess.run(['sudo','systemctl','disable','--now','ops-pilot'], capture_output=True)
             subprocess.run(['sudo','rm','-f','/etc/systemd/system/ops-pilot.service'], check=True)
             subprocess.run(['sudo','systemctl','daemon-reload'], check=True)
-            http.shutdown(); http.server_close(); thread.join()
+            http_server.shutdown(); http_server.server_close(); thread.join()
 
 
 if __name__ == '__main__': run()
