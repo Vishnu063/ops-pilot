@@ -15,49 +15,172 @@ production-certified autonomous DevOps engineer.
 
 **Verified:** Python 3.11/3.12/3.13 checks, installed setup smoke, desktop/mobile
 Chromium dashboard acceptance and three real disposable Docker tests passed. [Evidence and remaining limits](docs/VALIDATION.md).
-No customer/EC2 application has been connected or changed.
+On 19 October 2026, the owner also reported a successful manual EC2 demo: nginx
+returned HTTP 200, stopping `ops-pilot-demo` triggered findings, and the dashboard
+reported **Recovery checks passed** after the repair flow. This is user-reported
+demo evidence, not an independently captured production test. CloudLaunch/PharmaCare
+was not involved.
 
-## Get started on your Linux server
+## Setup on Ubuntu / EC2
 
-Requires **Python 3.11+, Python venv, Git and Docker CLI/daemon**. Your existing
-Docker context must already have access to the application. Ops Pilot does not
-install Docker, modify groups, provision EC2, or change firewall rules.
+Run the server commands below in your **EC2 SSH terminal**. Run only the SSH
+forwarding command in your **Mac/computer terminal**. Open login links in your
+**browser**, never as shell commands. Keep AWS SSH access restricted to your IP.
+
+Requires **Python 3.11+, Python venv, Git, curl and Docker CLI/daemon**. No GPU,
+paid AI API or AI model is required. The launcher installs Python dependencies;
+Docker and system packages are installed separately below. Existing working
+Docker users can skip step 1.
+
+### 1. Install prerequisites and enable Docker access
+
+```bash
+sudo apt update
+sudo apt install -y git curl python3 python3-venv docker.io
+sudo systemctl enable --now docker
+sudo usermod -aG docker "$USER"
+```
+
+Disconnect and reconnect SSH so the Docker group takes effect. Alternatively,
+run `newgrp docker` to open a shell with the new group. Start Ops Pilot from this
+new shell too; a setup/server process already running in an older terminal keeps
+its old permissions. Docker group membership grants powerful host access.
+
+Check access without sudo:
+
+```bash
+docker ps -a --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
+```
+
+An empty table means Docker works but there are no containers on this server.
+If venv creation fails, install the venv package matching your Python version.
+Select another supported interpreter with `OPS_PILOT_PYTHON=python3.12` if needed.
+
+### 2. Choose your application (or create the demo)
+
+For an existing owned app, use its exact container name from the table and its
+actual readiness URL. Do not assume a container from another EC2 is present here.
+For a first test on an empty server, create this separate nginx demo:
+
+```bash
+docker run -d --name ops-pilot-demo -p 127.0.0.1:8080:80 nginx:alpine
+curl -I http://127.0.0.1:8080/
+```
+
+This downloads a small web-server image and serves its default welcome page only
+on EC2 loopback port 8080. It is not CloudLaunch/PharmaCare. If the first curl
+gets a connection reset while nginx starts, wait a few seconds and retry curl.
+Continue only after **HTTP 200**; persistent failures need investigation.
+If the container name already exists, inspect it with `docker ps -a` instead of
+creating it again. If port 8080 is occupied, select a free host port and use that
+same port in the health URL. Do not open 8080 in the security group for this demo.
+
+### 3. Download and configure Ops Pilot
+
+Clone once into your chosen parent directory:
 
 ```bash
 git clone https://github.com/Vishnu063/ops-pilot.git
 cd ops-pilot
 bash start.sh setup
+```
+
+If already cloned, enter the existing directory containing `start.sh`; do not
+clone again inside it. The launcher creates `.venv` and installs this project and
+its pinned Triage dependency. Setup connects one target and performs no repair.
+For our demo, enter these four answers (paste plain text, without Markdown links):
+
+| Setup prompt | Demo answer |
+| --- | --- |
+| Application name | `Demo App` |
+| Docker context [default] | Press Enter |
+| Exact container name or ID | `ops-pilot-demo` |
+| Health URL (HTTPS, or local HTTP) | `http://127.0.0.1:8080/` |
+
+For your own app, substitute its real name, Docker context, container and health
+URL. If configuration already exists, setup asks you to type `replace` before
+changing it. Stop an existing Ops Pilot server before changing configuration.
+
+Start the dashboard and leave this terminal running:
+
+```bash
 bash start.sh
 ```
 
-The first command downloads the project; setup asks four short questions:
-application name, explicit Docker context, exact container name/ID and health URL.
-The launcher creates a Python environment and installs the project and its pinned
-Triage dependency. Later starts reuse the installation. Stop with **Ctrl+C**.
+It prints a private login URL beginning with
+`http://127.0.0.1:8767/login?token=...`. Copy the **complete actual URL**, including
+the token. The dots are a placeholder, not a usable login. Do not share the URL,
+commit it, or paste it into the EC2 shell. **Ctrl+C stops monitoring**; closing
+SSH can also end this foreground process. No background service is installed.
 
-If Ubuntu says venv is missing:
+### 4. Open it on your Mac/computer
 
-```bash
-sudo apt install python3-venv
-```
-
-Use the venv package matching your Python version if your distribution requires
-it. To select another supported interpreter, set `OPS_PILOT_PYTHON=python3.12`.
-
-### Open the dashboard
-
-On the same computer, open the **private login link printed in the terminal**.
-It starts with `http://127.0.0.1:8767/login?token=...`. Keep that link private.
-
-For EC2, run this on your computer, using your existing SSH configuration:
+Leave the server terminal open. Open a **second terminal on your Mac/computer**
+and run your usual SSH command with local forwarding added:
 
 ```bash
-ssh -L 8767:127.0.0.1:8767 ubuntu@YOUR_SERVER
+ssh -N -o ExitOnForwardFailure=yes -L 8767:127.0.0.1:8767 -i /path/to/key.pem ubuntu@YOUR_EC2_PUBLIC_IP
 ```
 
-Then open the terminal's login link in your computer's browser. Do not open port
-8767 in your security group. On a phone, use an SSH client with local forwarding;
-GitHub's mobile app alone cannot run this server or establish that tunnel.
+Replace the key path and public IP with your existing connection details. If
+your normal SSH connection uses an SSH alias or a different username, reuse it.
+With `-N`, the terminal stays open without a shell prompt; this is expected.
+Keep this tunnel terminal open too.
+
+Open **Safari/your browser on the same computer** and paste the full login URL
+from step 3 into its address bar. `127.0.0.1` now reaches EC2 through SSH.
+**Do not open port 8767 in the AWS security group.** Opening it alone cannot
+reach this loopback-only preview. Public hosting is not supported in this version.
+
+For a Linux computer running Ops Pilot locally, open the printed link directly;
+no tunnel is needed. On a phone, use an SSH client supporting local forwarding.
+GitHub's mobile app alone cannot run the server or establish the tunnel.
+
+### 5. Test a failure and recovery (demo only)
+
+First confirm the dashboard identifies `ops-pilot-demo` and shows **Endpoint
+checks passed**. In another EC2 shell, deliberately stop only our demo:
+
+```bash
+docker stop ops-pilot-demo
+```
+
+On the dashboard:
+
+1. Click **Investigate now**. Expect the stopped-container and failed-endpoint findings.
+2. Click **Review restart option**. Inspect the exact command and confirm its
+   immutable container ID belongs to `ops-pilot-demo`.
+3. Paste the **current complete plan ID** into the field and click **Approve this plan**.
+4. Click **Run approved restart** separately. Approval alone does not restart it.
+5. Look for **Recovery checks passed** in repair history and a passing current
+   endpoint check. If either fails, inspect the evidence before trying again.
+
+Plans expire after five minutes. Review a fresh plan if expired; never reuse an
+old example ID. This test deliberately interrupts only the disposable demo.
+It proves this stopped-container flow, not general failure repair or AI quality.
+For independent confirmation after recovery, run in an EC2 shell:
+
+```bash
+docker ps --filter name=ops-pilot-demo
+curl -I http://127.0.0.1:8080/
+```
+
+If abandoning the test with the demo still stopped, restore it manually with
+`docker start ops-pilot-demo`. This manual fallback is not an Ops Pilot repair.
+
+### Setup troubleshooting
+
+| What you see | What to do |
+| --- | --- |
+| `docker: command not found` | Complete step 1. |
+| Docker socket `permission denied` | Reconnect SSH or run `newgrp docker`; restart setup/server from that shell. Do not make the socket world-writable. |
+| No Docker containers listed | Use the demo in step 2 or deploy your own app first. |
+| nginx connection reset immediately after creation | Retry curl after startup; if persistent, inspect `docker logs --tail 50 ops-pilot-demo` locally. Redact secrets before sharing logs. |
+| A URL gives shell `No such file or directory` | Paste the login URL into your computer's browser address bar. |
+| `Use the fresh login link printed in your server terminal` | Copy the complete current URL. If needed, Ctrl+C in the server terminal, run `bash start.sh`, and use its newly printed URL. Every server restart changes the token. Keep the tunnel open. |
+| Browser cannot connect | Check both server and tunnel are running and use the same port. The public EC2 IP is for SSH, not the dashboard URL. |
+| SSH says local port 8767 is already in use | Close the old tunnel if it is yours. Otherwise choose `bash start.sh --port 8768` and change both tunnel ports to 8768; use the newly printed login URL. |
+| Repair action refused or expired | Refresh, investigate current state and review a new plan. Used approvals cannot run twice. |
 
 ## The first complete flow
 
