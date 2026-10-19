@@ -67,6 +67,22 @@ def run():
             expect(page.locator("#monitor-label")).to_have_text("Monitoring paused")
             page.locator("#monitor").click()
             expect(page.locator("#monitor-label")).to_have_text("Monitoring on")
+            page.locator("#maintenance").click()
+            expect(page.locator("#monitor-label")).to_contain_text("Maintenance until")
+            expect(page.locator("#plan")).to_be_disabled()
+            page.reload()
+            expect(page.locator("#maintenance")).to_have_text("End maintenance")
+            page.locator("#maintenance").click()
+            expect(page.locator("#monitor-label")).to_have_text("Monitoring on")
+            expect(page.locator("#diagnosis-detail")).to_contain_text("State: running")
+            with page.expect_download() as download:
+                page.get_by_role("link", name="Download incident report (JSON)").click()
+            report_path = OUTPUT / "downloaded-report.json"
+            download.value.save_as(report_path)
+            report = json.loads(report_path.read_text())
+            assert report["result"]["status"] == "verified"
+            assert server.token not in report_path.read_text()
+            expect(page.locator("#alerts")).to_contain_text("repair verified")
             page.screenshot(path=str(OUTPUT / "desktop-recovered.png"), full_page=True)
             # Hostile labels render as text, not markup or executable elements.
             fixture.pilot.config["name"] = '<img src=x onerror="alert(1)">'
@@ -90,7 +106,7 @@ def run():
             "status": "passed", "browser": "Chromium", "viewports": ["1280x900", "390x844"],
             "checks": ["session required", "incident displayed", "exact-plan approval", "approval is non-mutating",
                        "explicit execution", "verified recovery display", "reload does not replay", "pause/resume",
-                       "label escaping", "no horizontal overflow", "no JavaScript errors"],
+                       "maintenance reload and repair block", "authenticated report download", "local alert display", "label escaping", "no horizontal overflow", "no JavaScript errors"],
             "scope": "Real browser/HTTP/SQLite; simulated Docker. Actual Docker tested separately."}, indent=2))
         print("Browser acceptance passed: desktop, mobile, session, approval, recovery, no replay or script errors.")
     finally:

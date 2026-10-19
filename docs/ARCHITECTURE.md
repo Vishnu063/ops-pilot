@@ -46,3 +46,24 @@ Only approved, supported repairs may execute. There is no Uptime Kuma integratio
 HolmesGPT integration, queue infrastructure or system service in this milestone.
 Adding them would require real integration tests, permission/data-boundary review
 and scope-specific documentation rather than broad compatibility claims.
+
+## Daily operations (0.2)
+
+`runtime.py` stores monitor controls and bounded alert delivery history in private
+`monitor.sqlite3`, keyed by context/container/health URL. Timed maintenance probes
+health but suppresses automatic investigation/alerts and blocks repair actions;
+entering it cancels an outstanding pending/approved plan. Pause is persistent.
+Webhook attempts commit before I/O, send only source/event, reject redirects and
+proxies, and never retry automatically. A process crash can lose a delivery;
+`attempting` is ambiguous. No delivery guarantee is claimed.
+
+`/api/report` is an authenticated attachment built from the same filtered state.
+No webhook destination, login token, raw inspect payload or raw log content is
+included. The Docker parser adds RestartCount to the existing filtered projection.
+
+`system_service.py` renders a fixed nonroot systemd entrypoint, with path/user
+validation; the explicit installer refuses an occupied default port. It never
+runs package installation at boot or alters an app container's startup policy.
+Systemd restarts the monitor on failure; it does not approve/replay application
+repairs. A full host reboot and production deployment still require host-specific
+validation. See README for private journal/tunnel access and removal.

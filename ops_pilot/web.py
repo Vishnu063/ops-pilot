@@ -59,6 +59,12 @@ class Handler(BaseHTTPRequestHandler):
             return self.send(401, "Open the login link printed by start.sh. On EC2, create the SSH tunnel first. Restarting Ops Pilot changes the link.", "text/plain")
         if url.path == "/":
             return self.send(200, Path(__file__).with_name("dashboard.html").read_text(), "text/html")
+        if url.path == "/api/report":
+            try:
+                report = self.server.pilot.export_report()
+            except ValueError:
+                return self.send(409, {"error": "Wait for the current operation before exporting"})
+            return self.send(200, report, headers={"Content-Disposition": 'attachment; filename="ops-pilot-incident.json"'})
         if url.path == "/api/state":
             return self.send(200, self.server.pilot.state())
         return self.send(404, {"error": "Not found"})

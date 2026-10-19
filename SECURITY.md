@@ -27,3 +27,15 @@ Optional local AI is untrusted advice. No model/download is enabled by default.
 Do not paste secrets into model prompts or reports. No full security audit or
 production acceptance has been performed. Report sensitive issues privately to the
 repository owner rather than placing customer data in public issues.
+
+## Daily operation boundaries
+
+The optional systemd service runs as the installing user, who already has Docker
+access. It is not a sandbox against a compromised Docker daemon/account. Treat
+service journals as private because they contain the login capability. Source
+updates affect that user's next service start. Keep the repository trusted.
+Maintenance is a server-enforced block on planning/approval/execution, not just
+a UI switch. Downloaded JSON contains target identifiers and filtered evidence.
+Review it before sharing. Outgoing webhooks are opt-in; keep private path tokens
+in local configuration only. Network timeouts do not provide guaranteed alert
+delivery. Do not configure untrusted receivers.

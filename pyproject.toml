@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ops-pilot"
-version = "0.1.0"
+version = "0.2.0"
 description = "A focused Docker incident workflow with reviewed repairs and application verification"
 requires-python = ">=3.11"
 dependencies = ["devops-triage-assistant @ https://github.com/Vishnu063/devops-triage-assistant/archive/e4b51f28bb3dcd8395ab5fbfe93d946f19156031.zip"]
