@@ -3,6 +3,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import socket
 import tempfile
 import time
 import unittest
@@ -31,23 +32,25 @@ class DockerLab(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.name = "ops-pilot-lab-" + uuid.uuid4().hex[:12]
+        # Choose a free port, then publish it explicitly: Docker may allocate a
+        # different host port after restarting a dynamically published container.
+        with socket.socket() as reservation:
+            reservation.bind(("127.0.0.1", 0))
+            port = reservation.getsockname()[1]
         self.identifier = docker("run", "-d", "--name", self.name, "--label", "ops-pilot.lab=" + self.name,
-            "-p", "127.0.0.1::8000", self.image, "python", "-m", "http.server", "8000")
-        state = json.loads(docker("container", "inspect", self.identifier))[0]
-        port = state["NetworkSettings"]["Ports"]["8000/tcp"][0]["HostPort"]
+            "-p", f"127.0.0.1:{port}:8000", self.image, "python", "-m", "http.server", "8000")
+        self.addCleanup(self.cleanup_container)
+        self.addCleanup(self.temp.cleanup)
         self.url = f"http://127.0.0.1:{port}/"
         self.config = {"name": "Owned disposable lab", "docker_context": "default", "container": self.name, "health_url": self.url, "interval_seconds": 15}
         self.pilot = Pilot(self.config, self.temp.name)
+        self.addCleanup(self.pilot.close)
         self.assertTrue(self.wait_health())
-    def tearDown(self):
-        self.pilot.close()
-        try:
-            state = json.loads(docker("container", "inspect", self.identifier))[0]
-            if state["Config"]["Labels"].get("ops-pilot.lab") != self.name:
-                raise RuntimeError("Lab ownership changed; refusing cleanup")
-            docker("rm", "-f", self.identifier)
-        finally:
-            self.temp.cleanup()
+    def cleanup_container(self):
+        state = json.loads(docker("container", "inspect", self.identifier))[0]
+        if state["Config"]["Labels"].get("ops-pilot.lab") != self.name:
+            raise RuntimeError("Lab ownership changed; refusing cleanup")
+        docker("rm", "-f", self.identifier)
     def wait_health(self):
         from triage.health import check_health
         for _ in range(15):
