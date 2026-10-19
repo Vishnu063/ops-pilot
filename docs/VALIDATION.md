@@ -1,5 +1,54 @@
 # Validation
 
+## Daily operations 0.2 — 19 October 2026
+
+Application/test source commit: `ec375ecbef55a8dada9c2a395e865d67f117489c`.
+[Passing six-job workflow](https://github.com/Vishnu063/ops-pilot/actions/runs/39215664960).
+This section records observed results; earlier sections below are historical.
+
+- Python 3.11/3.12/3.13 each passed 22 unit/local-HTTP tests, installed CLI/setup
+  smoke and Python/shell/dashboard syntax. Three actual Docker cases were skipped
+  in unit jobs and all three passed in the separate Docker lab.
+- Daily tests cover maintenance cancellation and server-side repair blocks,
+  maintenance expiry/restart persistence, pause/target scoping, outage deduplication,
+  crash during webhook delivery, failed delivery preserving a repair result,
+  failed HTTP recovery alerts, honest OOM/restart diagnosis, authenticated report
+  export, minimal HTTP webhook payloads and redirect rejection.
+- Real systemd CI installed the service as a nonroot user, checked boot enablement,
+  observed a detached service start, restarted it, verified persisted maintenance,
+  killed the main process with SIGKILL and observed systemd restart it with a new
+  session. No application repair was run. The test removed its own unit afterward.
+  **A full host reboot was not performed.** This is Ubuntu 24.04 runner acceptance,
+  not validation of the owner's Ubuntu 26.04 background-service installation.
+- Chromium desktop/mobile acceptance again passed: exact approval, explicit repair,
+  reload without replay, maintenance controls/reload, authenticated JSON download,
+  local alert display, escaped labels and no overflow or JavaScript errors.
+  Desktop and phone recovery screenshots from the preceding all-green run
+  [39215569386](https://github.com/Vishnu063/ops-pilot/actions/runs/39215569386)
+  were visually reviewed. The final run retains the same UI; its subsequent code
+  change persists outage transitions before webhook I/O and adds the crash test.
+- [Final browser artifact](https://github.com/Vishnu063/ops-pilot/actions/runs/39215664960/artifacts/12169830550).
+- [Real systemd evidence](https://github.com/Vishnu063/ops-pilot/actions/runs/39215664960/artifacts/12169666455).
+- [Actual Docker evidence](https://github.com/Vishnu063/ops-pilot/actions/runs/39215664960/artifacts/12169432785).
+
+The first service test run [39215451466](https://github.com/Vishnu063/ops-pilot/actions/runs/39215451466)
+failed because the test fixture shadowed Python's `http` module with a local
+variable. That fixture was corrected; its temporary home was also moved outside
+`/tmp` so systemd PrivateTmp could not hide the configuration. No repair/approval
+checks were relaxed. The next and final code runs passed all six jobs.
+
+Locally, 22 tests passed with three actual Docker skips; shell/Python/dashboard
+syntax and README command-block syntax passed. Docker/systemd acceptance was run
+in CI, not against a customer host. No external alert recipient was contacted:
+webhook tests use a disposable loopback receiver. Real email/phone delivery,
+long-running monitoring, full reboot and production operation remain unverified.
+
+The owner separately reported a manual nginx demo recovery on EC2 earlier that
+day: HTTP 200 before the outage, stopped-container/endpoint findings after
+`docker stop ops-pilot-demo`, and dashboard **Recovery checks passed** afterward.
+This user-reported result did not involve CloudLaunch/PharmaCare and does not
+validate the new background service on that EC2.
+
 ## Verified CI — 19 October 2026
 
 Application/test source commit: `4aeae618df48b1ef3d204aca65d56c2df33c08b6`.

@@ -13,8 +13,10 @@ API, model, Kubernetes cluster, n8n or separate monitoring server is required fo
 this first flow. Optional local AI explanations are advisory only. This is not a
 production-certified autonomous DevOps engineer.
 
-**Verified:** Python 3.11/3.12/3.13 checks, installed setup smoke, desktop/mobile
-Chromium dashboard acceptance and three real disposable Docker tests passed. [Evidence and remaining limits](docs/VALIDATION.md).
+**Verified:** Python 3.11/3.12/3.13 checks (22 unit/local-HTTP tests), installed
+setup smoke, desktop/mobile Chromium acceptance, three real disposable Docker
+tests and real systemd start/crash-recovery acceptance passed. A full host reboot
+and external notification delivery have not been tested. [Evidence and remaining limits](docs/VALIDATION.md).
 On 19 October 2026, the owner also reported a successful manual EC2 demo: nginx
 returned HTTP 200, stopping `ops-pilot-demo` triggered findings, and the dashboard
 reported **Recovery checks passed** after the repair flow. This is user-reported
