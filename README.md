@@ -13,8 +13,8 @@ API, model, Kubernetes cluster, n8n or separate monitoring server is required fo
 this first flow. Optional local AI explanations are advisory only. This is not a
 production-certified autonomous DevOps engineer.
 
-**Verified:** Python 3.11/3.12/3.13 checks and three real disposable Docker
-acceptance tests passed. [Evidence and remaining limits](docs/VALIDATION.md).
+**Verified:** Python 3.11/3.12/3.13 checks, installed setup smoke, desktop/mobile
+Chromium dashboard acceptance and three real disposable Docker tests passed. [Evidence and remaining limits](docs/VALIDATION.md).
 No customer/EC2 application has been connected or changed.
 
 ## Get started on your Linux server
@@ -177,6 +177,24 @@ The lab downloads a Python container image. CI records its resolved digest and
 Docker version. It never targets your configured application. See [validation](docs/VALIDATION.md)
 for observed results, [architecture](docs/ARCHITECTURE.md) for boundaries, and
 [security](SECURITY.md) before connecting production systems.
+
+### Optional browser checks for contributors
+
+Browser dependencies are for development/CI only; users do not need them to run
+Ops Pilot. The browser flow uses simulated Docker plus real HTTP/SQLite. The
+separate Docker lab above tests actual container operations.
+
+```bash
+.venv/bin/python -m pip install playwright==1.58.0
+.venv/bin/python -m playwright install chromium
+.venv/bin/python tests/browser_acceptance.py
+.venv/bin/python scripts/installation_smoke.py
+```
+
+On Linux, Playwright may need system browser libraries. CI installs them with
+`python -m playwright install --with-deps chromium`. Synthetic screenshots and
+`result.json` are written to ignored `browser-evidence/`; never put customer data
+in this fixture. CI uploads the evidence for review. See [observed browser results](docs/VALIDATION.md#desktopmobile-browser-and-installed-setup-acceptance).
 
 ## Business/product roadmap
 

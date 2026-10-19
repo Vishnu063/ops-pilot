@@ -53,8 +53,8 @@ simulated. CI separately supplies the actual Docker evidence above.
 
 ## Boundaries still pending
 
-A local headless browser was unavailable. Visual and interactive browser
-acceptance, AI inference quality, long-running monitoring, remote Docker contexts,
+A local headless browser was unavailable; the later CI browser acceptance below
+passed. AI inference quality, long-running monitoring, remote Docker contexts,
 production/customer systems, audit retention and multi-customer controls remain
 unverified. Passing this lab does not establish production readiness or the ability
 to diagnose arbitrary failures. The configured HTTP endpoint is scoped verification,
@@ -66,3 +66,33 @@ Initial uploads were not executed because the automatic approval-review model wa
 at capacity. A later retry initialized GitHub and the complete implementation was
 published in PR #1. The earlier ZIP is a pre-CI snapshot; use the GitHub source and
 this validation record for the corrected version.
+
+## Desktop/mobile browser and installed setup acceptance
+
+Test/workflow source commit: `d8bed409a4a9b1765acf15b377b2ab8b14aed051`.
+[Passing five-job workflow](https://github.com/Vishnu063/ops-pilot/actions/runs/39210004948).
+Documentation added afterward records the observed results.
+
+- Chromium through Playwright 1.58.0 passed the dashboard flow at 1280×900 and
+  390×844 viewport sizes. No horizontal phone overflow or JavaScript page errors
+  were reported. Desktop-approved, desktop-recovered and phone-recovered captures
+  were produced; desktop-approved and phone-recovered were visually reviewed.
+- Browser checks verified login is required; a wrong plan ID cannot approve;
+  correct approval alone performs no mutation; execution displays verified
+  recovery; reload cannot replay the action; monitoring pause/resume works;
+  hostile labels remain inert text and a second browser has no inherited session.
+- This browser flow uses the existing simulated Docker fixture with real HTTP,
+  SQLite and dashboard server. It does not replace actual container acceptance.
+- The separate three-case actual Docker lab also passed in this workflow.
+- Installed CLI/setup smoke passed on Python 3.11, 3.12 and 3.13 from an isolated
+  working directory. It verified the installed entry point, wizard configuration,
+  file mode 0600 and cancellation without overwriting the existing file.
+- All 12 unit/local-HTTP tests and Python, shell and JavaScript syntax checks
+  passed on each Python version.
+- [Browser evidence and synthetic screenshots](https://github.com/Vishnu063/ops-pilot/actions/runs/39210004948/artifacts/12167725229).
+  Artifact ZIP SHA-256:
+  `ea5df4eac8b720627484bc3b69b80e26b3d8a431d85f0c5028072207c3df6628`.
+
+This is Chromium viewport acceptance, not testing on a physical Android phone,
+all browser engines, assistive technologies or customer infrastructure. No full
+accessibility audit or live AI inference benchmark is claimed.
