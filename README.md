@@ -185,6 +185,7 @@ Ops Pilot. The browser flow uses simulated Docker plus real HTTP/SQLite. The
 separate Docker lab above tests actual container operations.
 
 ```bash
+source .venv/bin/activate
 .venv/bin/python -m pip install playwright==1.58.0
 .venv/bin/python -m playwright install chromium
 .venv/bin/python tests/browser_acceptance.py
