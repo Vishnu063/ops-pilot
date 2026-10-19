@@ -7,6 +7,8 @@ from triage.health import check_health
 from triage.integrations import ToolAdapter
 from triage.tool_engine import ToolEngine
 from .config import validate
+from .runtime import Runtime
+from .alerts import deliver
 
 
 class DockerAdapter(ToolAdapter):
@@ -42,6 +44,13 @@ class DockerAdapter(ToolAdapter):
         self.last_snapshot = snapshot
         return snapshot
 
+    def parse(self, raw):
+        import json
+        observations = super().parse(raw)
+        items = json.loads(raw)
+        observations["restart_count"] = [item.get("RestartCount") for item in items]
+        return observations
+
     def repair_allowed(self, snapshot):
         import re
         ids = snapshot["observations"].get("id", [])
@@ -73,13 +82,17 @@ class Pilot:
         self.config, self.health = validate(config)
         adapter = DockerAdapter({"context": self.config["docker_context"], "resource": self.config["container"]})
         self.engine = engine or ExperienceEngine(ToolEngine(adapter, state_dir), self.health)
+        self.runtime = Runtime(state_dir, self.config)
+        stored = self.runtime.load()
+        self.maintenance_until = stored.get("maintenance_until", 0)
         self.ai_model = ai_model
         self.explanation = None
         self.probe = probe
         self.lock = threading.Lock()
         self.stop_event = threading.Event()
-        self.monitor = {"enabled": True, "checked_at": None, "healthy": None, "error": None, "busy": False}
-        self.failed = False
+        self.monitor = {"enabled": stored.get("enabled", True), "checked_at": None, "healthy": None, "error": None, "busy": False}
+        self.failed = stored.get("failed", False)
+        self.monitor_error = False
         self.thread = None
         self.report = self.engine.store.latest(self.engine.adapter.target)[1]
         self.plan_id = None
@@ -91,6 +104,51 @@ class Pilot:
                 if json.loads(payload).get("target") == self.engine.adapter.target:
                     self.plan_id = plan_id
                     break
+        if self.plan_id:
+            _, outcome = self.engine.store.latest(self.engine.adapter.target, 'outcome:' + self.plan_id)
+            if outcome:
+                self.result = outcome.get('result')
+
+    def _persist(self):
+        self.runtime.save(self.monitor["enabled"], self.maintenance_until, self.failed)
+
+    def _notify(self, event):
+        url = self.config.get("alert_url")
+        # Persist attempt before I/O. Never replay notifications after restart.
+        alert = self.runtime.record(event, "attempting" if url else "local_only")
+        if url:
+            try:
+                deliver(url, event)
+            except Exception:
+                # Delivery is best effort and must never undo/obscure a repair.
+                self.runtime.delivered(alert, "failed")
+            else:
+                self.runtime.delivered(alert, "sent")
+
+    def diagnosis(self):
+        obs = (self.report or {}).get("snapshot", {}).get("observations", {})
+        def first(key):
+            return (obs.get(key) or [None])[0]
+        status, code, oom, restarts = (first(k) for k in ("state", "exit_code", "oom", "restart_count"))
+        explanation = "Evidence unavailable; investigate Docker access first."
+        if status:
+            explanation = "Container state recorded; compare it with the current endpoint check."
+        if status in ("exited", "dead", "stopped"):
+            explanation = "Container stopped. Exit code alone does not establish why it stopped."
+        if oom is True:
+            explanation = "Docker reports an out-of-memory kill. Compare memory limits and usage before restarting."
+        elif status == "restarting":
+            explanation = "Container is restarting. Inspect startup logs and recent deployment changes."
+        return dict(state=status, exit_code=code, oom_killed=oom, restart_count=restarts, explanation=explanation)
+
+    def export_report(self):
+        state = self.state()
+        if state.get("busy"):
+            raise ValueError("Wait for the current operation before exporting")
+        return {"schema_version": 1, "generated_at": time.time(),
+                "scope": "One configured Docker app; filtered evidence, not a root-cause guarantee.",
+                **{k: state[k] for k in ("name", "container", "context", "health_url", "monitor",
+                   "maintenance_until", "diagnosis", "report", "plan", "result", "history", "alerts")}}
 
     def _investigate(self):
         self.report = self.engine.scan(deep=True)
@@ -103,15 +161,29 @@ class Pilot:
             if not self.monitor["enabled"]:
                 return False
             self.monitor["busy"] = True
+            if self.maintenance_until and self.maintenance_until <= time.time():
+                self.maintenance_until = 0
+                self.failed = False
             health = self.probe(self.health)
             if type(health.get("healthy")) is not bool:
                 raise ValueError("Health probe did not return a verified outcome")
             self.monitor.update(checked_at=time.time(), healthy=health["healthy"], error=None)
-            if not health["healthy"] and not self.failed:
-                self._investigate()
-            self.failed = not health["healthy"]
+            if self.maintenance_until > time.time():
+                self.failed = False
+            else:
+                if not health["healthy"] and not self.failed:
+                    self._investigate()
+                    self._notify("application_failed")
+                elif health["healthy"] and self.failed:
+                    self._notify("endpoint_recovered")
+                self.failed = not health["healthy"]
+            self._persist()
+            self.monitor_error = False
             return True
         except (ValueError, RuntimeError, OSError):
+            if not self.monitor_error and self.maintenance_until <= time.time():
+                self._notify("monitor_error")
+            self.monitor_error = True
             self.monitor.update(healthy=None, error="Monitoring or investigation failed. Check the configuration, Docker connection and permissions.")
             return False
         finally:
@@ -141,7 +213,9 @@ class Pilot:
             plan = self.engine.show(self.plan_id) if self.plan_id else None
             return copy.deepcopy({"name": self.config["name"], "container": self.config["container"],
                 "context": self.config["docker_context"], "health_url": self.config["health_url"],
-                "busy": False, "monitor": self.monitor, "report": self.report, "plan": plan, "result": self.result,
+                "busy": False, "maintenance_until": self.maintenance_until,
+                "diagnosis": self.diagnosis(), "alerts": self.runtime.alerts(),
+                "alert_delivery_enabled": bool(self.config.get("alert_url")), "monitor": self.monitor, "report": self.report, "plan": plan, "result": self.result,
                 "ai_model": self.ai_model, "explanation": self.explanation, "history": self.engine.history()[:30]})
         finally:
             self.lock.release()
@@ -150,6 +224,20 @@ class Pilot:
         if not self.lock.acquire(blocking=False):
             raise ValueError("A check or repair is running. Wait for it to finish.")
         try:
+            if name == "maintenance":
+                if self.maintenance_until > time.time():
+                    self.maintenance_until = 0
+                else:
+                    if self.plan_id:
+                        plan = self.engine.show(self.plan_id)
+                        if plan["status"] in ("pending", "approved"):
+                            self.engine.cancel(self.plan_id)
+                    self.maintenance_until = time.time() + 3600
+                self.failed = False
+                self._persist()
+                return {"maintenance_until": self.maintenance_until}
+            if name in ("plan", "approve", "apply") and self.maintenance_until > time.time():
+                raise ValueError("End maintenance before planning or running a repair")
             if name == "explain":
                 if not self.ai_model or not self.report:
                     raise ValueError("Optional AI needs a separately installed local model and an incident first")
@@ -160,6 +248,9 @@ class Pilot:
                 return self._investigate()
             if name == "monitor":
                 self.monitor["enabled"] = not self.monitor["enabled"]
+                if self.monitor["enabled"]:
+                    self.failed = False
+                self._persist()
                 return {"enabled": self.monitor["enabled"]}
             if name == "plan":
                 plan = self.engine.plan("restart")
@@ -179,6 +270,8 @@ class Pilot:
             self.monitor.update(healthy=self.result["application_health"]["healthy"], checked_at=time.time())
             self.failed = self.monitor["healthy"] is False
             self.report = self.engine.store.latest(self.engine.adapter.target)[1]
+            self._persist()
+            self._notify("repair_verified" if self.result["status"] == "verified" else "repair_needs_attention")
             return self.result
         finally:
             self.lock.release()

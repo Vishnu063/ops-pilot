@@ -8,7 +8,7 @@ Ops Pilot watches **one Docker application**, investigates a failed endpoint,
 shows the collected evidence and a supported restart option, and verifies the
 Docker state **and** application endpoint after an explicitly approved restart.
 
-**Early preview, v0.1.** One owner, one app, one loopback dashboard. No paid AI
+**Early preview, v0.2.** One owner, one app, one loopback dashboard. No paid AI
 API, model, Kubernetes cluster, n8n or separate monitoring server is required for
 this first flow. Optional local AI explanations are advisory only. This is not a
 production-certified autonomous DevOps engineer.
@@ -111,7 +111,8 @@ It prints a private login URL beginning with
 `http://127.0.0.1:8767/login?token=...`. Copy the **complete actual URL**, including
 the token. The dots are a placeholder, not a usable login. Do not share the URL,
 commit it, or paste it into the EC2 shell. **Ctrl+C stops monitoring**; closing
-SSH can also end this foreground process. No background service is installed.
+SSH can also end this foreground process. For monitoring after logout/reboot,
+install the optional background service below.
 
 ### 4. Open it on your Mac/computer
 
@@ -205,8 +206,142 @@ and arbitrary shell commands are not supported repairs.
 
 The health label is the latest endpoint check; the investigation is a separate,
 timestamped snapshot. Recheck after external changes. Monitoring can be paused
-without removing the saved incident. Restarting Ops Pilot resumes monitoring and
-restores the latest stored plan for review; it **never replays an action**.
+without removing the saved incident. The pause setting and timed maintenance
+survive restarts. Restarting Ops Pilot restores the latest stored plan for review; it **never replays an action**.
+
+## Daily operation improvements (v0.2)
+
+### Keep monitoring after SSH closes
+
+On an Ubuntu/systemd server, finish setup first. Stop foreground Ops Pilot with
+**Ctrl+C**, then run these from the existing project directory as your ordinary
+Docker-enabled user (the installer uses sudo only for systemd installation):
+
+```bash
+git pull --ff-only
+bash start.sh --update check
+```
+
+The diagnostic command keeps your existing configuration. Exit code 1 means it
+found an issue, and 2 means setup/collection failed; read the output before
+continuing. If you have not configured an app yet, run `bash start.sh setup` first.
+Then:
+
+```bash
+# Optional: inspect the unit before installation
+bash scripts/install-service.sh --print
+
+# Install, start, and enable monitoring for future boots
+bash scripts/install-service.sh
+sudo systemctl status ops-pilot --no-pager
+
+# Read the new private login URL on your own terminal
+sudo journalctl -u ops-pilot -n 15 --no-pager
+```
+
+The installer uses the current repository location and Linux user, default
+configuration/state paths, and port 8767. It refuses root execution and an occupied
+port. Install paths must use letters, numbers, slash, dot, dash or underscore.
+It starts the installed venv directly; it never downloads packages during boot.
+The service restarts Ops Pilot on a process failure and is enabled for boot.
+It does **not** automatically restart your application or approve any repair.
+A paused monitor stays paused after a service restart. Your app's own startup
+policy is separate; enabling Ops Pilot does not enable the demo container at boot.
+
+Your SSH tunnel is still needed whenever you open the dashboard, but monitoring
+continues when you close the tunnel or log out. Every service restart rotates the
+login URL. Journal access exposes that URL: read it locally and do not share logs.
+
+```bash
+# Update an installed background service (preserves app configuration/history)
+sudo systemctl stop ops-pilot
+git pull --ff-only
+bash start.sh --update check
+sudo systemctl start ops-pilot
+
+# Stop monitoring or disable automatic startup
+sudo systemctl stop ops-pilot
+sudo systemctl disable ops-pilot
+
+# Remove the service only; keep your configuration and incident history
+sudo systemctl disable --now ops-pilot
+sudo rm /etc/systemd/system/ops-pilot.service
+sudo systemctl daemon-reload
+```
+
+`check` can return 1 for findings or 2 for collection errors; read its output.
+If package installation fails, fix it before starting the service. Service
+installation does not provide public hosting, customer isolation or a watchdog
+for a process that is alive but stuck. Systemd references:
+[service restart behavior](https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html).
+
+### Maintenance and pause
+
+Click **Maintenance · 1 hour** before intentionally stopping/deploying your app.
+Health probes continue, but automatic investigations and outgoing alerts are
+suppressed until you click **End maintenance** or the hour expires. Pending or
+approved plans are cancelled on entry. Planning, approval and execution are
+blocked during maintenance. Manual **Investigate now** still works. Maintenance
+and pause survive process restarts, scoped to the exact context/container/URL.
+After maintenance expires, the next enabled monitoring tick investigates a
+failure again. **Pause monitoring** stops periodic checks entirely until resumed.
+Existing history remains available; maintenance does not erase prior incidents.
+
+### Local alerts and optional outgoing webhook
+
+The dashboard records app failure, endpoint recovery, monitoring errors, and
+repair verification/attention results. Repeated failing checks do not send a new
+app-failure alert on every tick. Local history is private, bounded to 500 stored
+alerts across configured targets, with the newest 30 shown for the current app.
+The outage state survives process restarts. Resuming a paused monitor explicitly
+starts a fresh failure check.
+
+To receive external notifications, configure a webhook you own (for example an
+existing n8n POST webhook that sends your chosen notification). Edit
+`~/.config/ops-pilot/config.json` locally and add this optional field:
+
+```json
+"alert_url": "https://YOUR_WEBHOOK_HOST/YOUR_PRIVATE_WEBHOOK_PATH"
+```
+
+Add the necessary comma in the surrounding JSON object. This line alone is not
+a complete configuration. Use HTTPS remotely; loopback HTTP is allowed for local
+receivers. Embedded user/password credentials, redirects and inherited proxies
+are rejected. No authentication-header setting is provided yet; use a private
+webhook path and keep the config private. Remove the field to disable delivery.
+Restart the foreground server or run `sudo systemctl restart ops-pilot` after
+editing. Setup replacement replaces the full config, including this optional field.
+
+The receiver gets only this small JSON payload, without application logs,
+container IDs, credentials, configuration or dashboard login tokens:
+
+```json
+{"source": "ops-pilot", "event": "application_failed"}
+```
+
+Other events: `endpoint_recovered`, `repair_verified`, `repair_needs_attention`,
+`monitor_error`. Local alert rows show `local_only`, `sent`, `failed` or
+`attempting`. `sent` means the webhook returned HTTP 2xx, not that an email or
+phone notification arrived. Attempts have a three-second network timeout and no
+automatic retries. A crash during delivery may leave `attempting`; events are
+not replayed after restart, so delivery is best effort rather than guaranteed.
+Webhook failure does not change the recorded repair outcome. External services
+may impose their own limits or costs. No external destination is configured or
+contacted by default; local delivery is tested against a disposable HTTP receiver.
+
+### Diagnosis and report download
+
+**Container diagnosis** displays the latest investigated state, exit code,
+Docker OOM flag and restart count. Unknown values remain unknown. Exit code 137
+alone is not labelled an OOM kill; Docker's OOM flag is required for that statement.
+The diagnosis is a snapshot, separate from current endpoint checks.
+
+Click **Download incident report (JSON)** for the current app details, filtered
+evidence/findings, plan, approval/action history, latest repair outcome, monitor
+controls and alerts. The download requires the same authenticated local session;
+it contains no dashboard token, webhook destination, or raw container logs.
+Target identifiers/health URLs can still be sensitive: review before sharing.
+The report is not a root-cause guarantee or a complete compliance audit export.
 
 ## What we reused
 
@@ -276,8 +411,9 @@ bash start.sh --update
 
 `check` exits 0 for no supported findings, 1 for findings, 2 for setup/collection
 failure. It is a bounded diagnostic result, not a universal health certification.
-Monitoring runs only while the process runs. No systemd unit, unattended restart,
-email delivery or webhook receiver is installed yet.
+Monitoring runs only while the foreground process or optional systemd service
+runs. No email delivery or incoming webhook receiver is installed. Outgoing
+webhook alerts require explicit configuration below.
 
 ## Test before using on customer systems
 

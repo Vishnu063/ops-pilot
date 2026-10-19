@@ -6,7 +6,7 @@ only when essential. Do not delegate work unless the user requests it.
 
 ## Project scope
 
-Ops Pilot 0.1 manages one explicit Docker application for one trusted local owner.
+Ops Pilot 0.2 manages one explicit Docker application for one trusted local owner.
 Reuse the pinned DevOps Triage Assistant engine for collection, persisted plans,
 expiry, approval consumption, incident history and application-health checks.
 Do not replace the engine with arbitrary shell execution or AI-generated commands.
@@ -28,3 +28,9 @@ CI also runs `python scripts/installation_smoke.py` against the installed CLI an
 Browser acceptance reuses simulated Docker and real HTTP/SQLite; never describe
 it as a replacement for the separate real Docker lab. Review its synthetic
 desktop/mobile screenshots before claiming visual acceptance.
+
+Daily operation additions must preserve separate approval/execution. Maintenance
+blocks repairs and persists across restarts. Alerts are minimal, opt-in for external
+delivery, best effort and never replayed. Report downloads require a session.
+Check actual systemd start/crash behavior in the disposable service CI lab; never
+install or test a service on customer infrastructure as part of repository work.

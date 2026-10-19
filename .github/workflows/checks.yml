@@ -27,7 +27,7 @@ jobs:
         run: python scripts/installation_smoke.py
       - name: Shell and Python syntax
         run: |
-          bash -n start.sh
+          bash -n start.sh scripts/install-service.sh
           python -m compileall -q ops_pilot tests
       - name: Dashboard JavaScript syntax
         run: |
@@ -72,5 +72,28 @@ jobs:
         with:
           name: browser-evidence
           path: browser-evidence/
+          if-no-files-found: ignore
+          retention-days: 30
+  service-lab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m venv .venv
+      - run: .venv/bin/python -m pip install .
+      - name: Actual systemd detached start and crash recovery
+        env:
+          OPS_PILOT_SERVICE_LAB: '1'
+        run: |
+          set -o pipefail
+          .venv/bin/python scripts/service_smoke.py 2>&1 | tee service-lab-results.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: service-lab-evidence
+          path: service-lab-results.txt
           if-no-files-found: ignore
           retention-days: 30

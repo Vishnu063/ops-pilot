@@ -11,9 +11,9 @@ DEFAULT_STATE = Path.home() / ".local/state/ops-pilot"
 
 
 def validate(value):
-    allowed = {"name", "docker_context", "container", "health_url", "interval_seconds"}
+    allowed = {"name", "docker_context", "container", "health_url", "interval_seconds", "alert_url"}
     if not isinstance(value, dict) or set(value) - allowed:
-        raise ValueError("Use only name, docker_context, container, health_url and interval_seconds")
+        raise ValueError("Use only name, docker_context, container, health_url, interval_seconds and optional alert_url")
     for key in ("name", "docker_context", "container", "health_url"):
         item = value.get(key)
         if not isinstance(item, str) or not item.strip() or len(item) > 500 or any(ord(c) < 32 for c in item):
@@ -26,6 +26,11 @@ def validate(value):
         raise ValueError("interval_seconds must be an integer between 15 and 3600")
     health = {"url": value["health_url"], "attempts": 3, "successes": 2, "timeout": 3, "interval": 1}
     validate_health(health)
+    if "alert_url" in value:
+        url = value["alert_url"]
+        if not isinstance(url, str) or not url or len(url) > 2000 or any(ord(c) < 33 for c in url):
+            raise ValueError("Enter a valid alert_url or remove it to disable delivery")
+        validate_health({**health, "url": url})
     return {**value, "interval_seconds": interval}, health
 
 
