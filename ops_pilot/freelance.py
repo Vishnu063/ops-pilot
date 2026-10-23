@@ -12,6 +12,7 @@ import secrets
 import sqlite3
 import threading
 import zipfile
+from . import agency
 
 AGENTS = {
     'scout': ('Job finder', 'Imports owner-provided listings; never scrapes a platform.'),
@@ -25,7 +26,7 @@ AGENTS = {
     'earnings': ('Earnings tracker', 'Summarizes owner-recorded payments; never charges anyone.'),
 }
 SKILLS = ('aws', 'ec2', 'docker', 'compose', 'jenkins', 'github actions', 'linux', 'nginx', 'kubernetes', 'helm', 'bash', 'python', 'grafana', 'prometheus')
-OWNER_ACTIONS = {'approve_proposal', 'accept', 'approve_work', 'sign_off', 'payment', 'edit_proposal', 'reject'}
+OWNER_ACTIONS = agency.ACTIONS | {'lab_run', 'lab_recover', 'advice'} | {'approve_proposal', 'accept', 'approve_work', 'sign_off', 'payment', 'edit_proposal', 'reject'}
 ACTIONS = {'import', 'edit_proposal', 'reject', *OWNER_ACTIONS, *AGENTS}
 
 
@@ -36,6 +37,8 @@ def now():
 def text(value, name, limit=12000, required=True):
     if not isinstance(value, str) or len(value) > limit or (required and not value.strip()) or '\x00' in value:
         raise ValueError(f'Enter a valid {name} (maximum {limit} characters)')
+    if re.search(r'(?i)(-----BEGIN .*PRIVATE KEY|AKIA[A-Z0-9]{16}|(?:password|secret|token)\s*[:=]\s*\S+)', value):
+        raise ValueError('Keep credentials outside project text; use a reference')
     return value.strip()
 
 
@@ -58,10 +61,13 @@ class Workspace:
         self.path = self.directory / 'workspace.sqlite3'
         fd = os.open(self.path, os.O_CREAT | os.O_WRONLY, 0o600)
         os.close(fd)
+        os.chmod(self.directory, 0o700)
+        os.chmod(self.path, 0o600)
         self.lock = threading.RLock()
         with self.connect() as db:
             db.execute('CREATE TABLE IF NOT EXISTS jobs (id TEXT PRIMARY KEY, source_key TEXT UNIQUE, payload TEXT NOT NULL)')
             db.execute('CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY, job TEXT, time TEXT, action TEXT, revision INTEGER)')
+            db.execute('CREATE TABLE IF NOT EXISTS audit (id INTEGER PRIMARY KEY, job TEXT, time TEXT, action TEXT, revision INTEGER, actor TEXT, evidence TEXT)')
             db.execute('CREATE TABLE IF NOT EXISTS payments (reference TEXT PRIMARY KEY, job TEXT, currency TEXT, gross INTEGER, fee INTEGER, time TEXT)')
 
     def connect(self):
@@ -108,6 +114,8 @@ class Workspace:
             jobs = [json.loads(r[0]) for r in db.execute('SELECT payload FROM jobs ORDER BY rowid DESC LIMIT 200')]
             events = [dict(job=j, time=t, action=a, revision=v) for j,t,a,v in db.execute('SELECT job,time,action,revision FROM events ORDER BY id DESC LIMIT 80')]
             totals = [dict(currency=c, gross_cents=g, fee_cents=f, net_cents=g-f) for c,g,f in db.execute('SELECT currency,SUM(gross),SUM(fee) FROM payments GROUP BY currency')]
+            for job in jobs:
+                job['business_summary'] = agency.summary(job, db.execute('SELECT gross,fee FROM payments WHERE job=?', (job['id'],)).fetchall())
         return dict(jobs=jobs, events=events, earnings=totals,
                     agents=[dict(id=k, name=v[0], description=v[1], mode='bounded local automation') for k,v in AGENTS.items()],
                     connectors={'upwork': 'not connected; manual import supported', 'fiverr': 'not connected',
@@ -116,6 +124,19 @@ class Workspace:
                     limits='Single owner. No automatic bidding, messages, live deployment or payment processing.')
 
     def act(self, payload, owner=False):
+        try:
+            return self._act(payload, owner)
+        except (ValueError, PermissionError, OSError) as exc:
+            if isinstance(payload, dict) and payload.get('action') in ACTIONS:
+                ident = payload.get('job_id')
+                if isinstance(ident,str) and re.fullmatch(r'[a-f0-9]{12}',ident):
+                    with self.connect() as db:
+                        db.execute('INSERT INTO audit(job,time,action,revision,actor,evidence) VALUES (?,?,?,?,?,?)',
+                            (ident,now(),payload['action'],payload.get('revision') if type(payload.get('revision')) is int else 0,
+                             'owner' if owner else 'workflow','refused:'+type(exc).__name__))
+            raise
+
+    def _act(self, payload, owner=False):
         if not isinstance(payload, dict) or set(payload) - {'action', 'job_id', 'revision', 'data'}:
             raise ValueError('Unknown command fields')
         action = payload.get('action')
@@ -129,14 +150,34 @@ class Workspace:
         if action == 'import':
             job = self.import_job(data)
             return dict(job=job, summary_html=self.summary())
-        with self.lock:
+        if action in ('lab_run', 'lab_recover'):
+            from .deployment_lab import Lab
+            return Lab(self).run(payload, recover=action == 'lab_recover')
+        with self.lock, self.connect() as db:
+            if action != 'advice':
+                db.execute('BEGIN IMMEDIATE')
             payment = None
-            job = self.get(payload.get('job_id'))
+            self.get(payload.get('job_id'))  # validates the identifier
+            job = json.loads(db.execute('SELECT payload FROM jobs WHERE id=?', (payload['job_id'],)).fetchone()[0])
             if type(payload.get('revision')) is not int or payload['revision'] != job['revision']:
                 raise ValueError('Job changed. Refresh its revision before acting')
             if job['state'] == 'rejected':
                 raise ValueError('Rejected jobs cannot run agents')
-            if action in AGENTS:
+            if job.get('lab',{}).get('status') == 'running':
+                raise ValueError('Lab is running or interrupted; inspect and recover it before editing')
+            if job.get('agency', {}).get('closed'):
+                raise ValueError('Closed projects are read-only')
+            if action == 'advice':
+                from .advisor import Advisor
+                advice = Advisor(self).advise(agency.checked(data, ('prompt','model'), ('prompt','model'))['prompt'],data['model'])
+                db.execute('BEGIN IMMEDIATE')
+                latest = json.loads(db.execute('SELECT payload FROM jobs WHERE id=?',(job['id'],)).fetchone()[0])
+                if latest['revision'] != job['revision']:
+                    raise ValueError('Job changed during advice; refresh')
+                job['advice'] = advice
+            elif action in agency.ACTIONS:
+                agency.handle(action, job, data)
+            elif action in AGENTS:
                 result = self.agent(action, job, data)
                 job['agents'][action] = dict(time=now(), output=result, mode='bounded local automation')
             elif action == 'edit_proposal':
@@ -149,7 +190,7 @@ class Workspace:
                     raise ValueError('Run the proposal agent first')
                 job['approvals']['proposal'] = dict(time=now(), revision=job['revision'])
             elif action == 'accept':
-                if job['state'] != 'proposal_ready' or 'proposal' not in job['approvals']:
+                if job['state'] != 'proposal_ready' or not self.approval_valid(job['approvals'].get('proposal')):
                     raise ValueError('Review and approve the proposal first')
                 if data.get('confirmation') != job['id']:
                     raise ValueError('Type the job ID to confirm the client actually accepted')
@@ -157,6 +198,8 @@ class Workspace:
             elif action == 'approve_work':
                 if job['state'] != 'accepted':
                     raise ValueError('Record client acceptance first')
+                if job.get('agency',{}).get('scope_changes'):
+                    raise ValueError('Scope changes require a separately agreed new project')
                 if data.get('confirmation') != job['id']:
                     raise ValueError('Type the job ID to approve starter-file generation')
                 if job['agents']['evaluator']['output']['scope'] != 'docker_starter':
@@ -181,15 +224,22 @@ class Workspace:
                 job['state'] = 'rejected'
             job['revision'] += 1
             job['updated'] = now()
-            with self.connect() as db:
-                if payment is not None:
-                    try:
-                        db.execute('INSERT INTO payments VALUES (?,?,?,?,?,?)', payment)
-                    except sqlite3.IntegrityError as exc:
-                        raise ValueError('Payment reference already recorded; no duplicate added') from exc
-                db.execute('UPDATE jobs SET payload=? WHERE id=?', (json.dumps(job), job['id']))
-                db.execute('INSERT INTO events(job,time,action,revision) VALUES (?,?,?,?)', (job['id'], now(), action, job['revision']))
+            if payment is not None:
+                try:
+                    db.execute('INSERT INTO payments VALUES (?,?,?,?,?,?)', payment)
+                except sqlite3.IntegrityError as exc:
+                    raise ValueError('Payment reference already recorded; no duplicate added') from exc
+            db.execute('UPDATE jobs SET payload=? WHERE id=?', (json.dumps(job), job['id']))
+            db.execute('INSERT INTO events(job,time,action,revision) VALUES (?,?,?,?)', (job['id'], now(), action, job['revision']))
+            db.execute('INSERT INTO audit(job,time,action,revision,actor,evidence) VALUES (?,?,?,?,?,?)',
+                (job['id'], now(), action, job['revision'], 'owner' if owner else 'workflow', self.digest(job)))
         return dict(job=job, summary_html=self.summary())
+
+    @staticmethod
+    def approval_valid(approval):
+        if not approval:
+            return False
+        return 0 <= (datetime.now(timezone.utc)-datetime.fromisoformat(approval['time'])).total_seconds() <= 3600
 
     @staticmethod
     def digest(job):
@@ -205,7 +255,7 @@ class Workspace:
                 raise ValueError('Run scout first')
             body = (job['title'] + '\n' + job['description']).lower()
             matched = [s for s in SKILLS if re.search(r'(?<!\w)' + re.escape(s) + r'(?!\w)', body)]
-            risks = [s for s in ('24/7', 'guaranteed', 'certified', 'delete', 'production database', 'migration') if s in body]
+            risks = [s for s in ('24/7', 'guaranteed', 'certified', 'delete', 'database', 'migration', 'persistent storage', 'private network') if s in body]
             scope = 'docker_starter' if 'docker' in matched and not risks else 'manual_review'
             job['state'] = 'evaluated'
             return dict(score=min(95, len(matched)*12), matched=matched, flags=risks, scope=scope,
@@ -228,10 +278,10 @@ class Workspace:
                 raise ValueError('Run client assistant first')
             job['state'] = 'proposal_ready'
             skills = ', '.join(job['agents']['evaluator']['output']['matched']) or 'the deployment requirements'
-            return dict(draft=f"Hello, I reviewed your request: {job['title']}.\n\nMy relevant work covers {skills}. I would first confirm the runtime and acceptance criteria, inspect the configuration, prepare a focused change, and document validation and rollback.\n\nPlease share the current setup and the specific issue. I will confirm the scope, price and delivery time after reviewing them.",
+            return dict(draft=f"Hello, I reviewed your request: {job['title']}.\n\nThe request mentions {skills}. My stated skills require owner verification before this draft is sent. I would first confirm the runtime and acceptance criteria, inspect the configuration, prepare a focused change, and document validation and rollback.\n\nPlease share the current setup and the specific issue. I will confirm the scope, price and delivery time after reviewing them.",
                         sent=False, caveat='Template draft. Verify every claim; no price, deadline or outcome is promised.')
         if name == 'worker':
-            if job['state'] != 'accepted' or 'work' not in job['approvals']:
+            if job['state'] != 'accepted' or not self.approval_valid(job['approvals'].get('work')):
                 raise ValueError('Owner must accept the job and separately approve work')
             image = text(data.get('image'), 'existing application image', 200)
             if not re.fullmatch(r'[a-zA-Z0-9][a-zA-Z0-9._/:@-]{0,199}', image):
@@ -242,8 +292,17 @@ class Workspace:
             health = text(data.get('health_path', '/health'), 'health path', 200)
             if not re.fullmatch(r'/[A-Za-z0-9_./-]*', health):
                 raise ValueError('Use a simple absolute health path')
+            brief = job.get('agency',{}).get('brief',{})
+            if brief.get('image') and brief['image'] != image:
+                raise ValueError('Image differs from the agreed requirements')
+            if brief.get('port') and brief['port'] != str(port):
+                raise ValueError('Port differs from the agreed requirements')
+            if brief.get('health_path') and brief['health_path'] != health:
+                raise ValueError('Readiness path differs from the agreed requirements')
+            if brief.get('configuration') and brief['configuration'].lower() not in ('none','no configuration'):
+                raise ValueError('First worker cannot supply custom application configuration')
             files = {
-                'compose.yaml': f'services:\n  app:\n    image: "{image}"\n    restart: unless-stopped\n    ports:\n      - "127.0.0.1:8080:{port}"\n    security_opt:\n      - no-new-privileges:true\n    cap_drop:\n      - ALL\n    logging:\n      driver: json-file\n      options:\n        max-size: "10m"\n        max-file: "3"\n',
+                'compose.yaml': f'services:\n  app:\n    image: "{image}"\n    restart: "no"\n    mem_limit: 256m\n    cpus: 0.5\n    pids_limit: 100\n    labels:\n      io.ops-pilot.job: {job["id"]}\n    ports:\n      - "127.0.0.1:${{OPS_PILOT_HOST_PORT:-8080}}:{port}"\n    security_opt:\n      - no-new-privileges:true\n    cap_drop:\n      - ALL\n    logging:\n      driver: json-file\n      options:\n        max-size: "10m"\n        max-file: "3"\n',
                 '.env.example': '# Put real secrets in your approved secret store. Never commit them.\n',
                 'HANDOVER.md': f'# Docker deployment starter\n\nJob: {job["id"]}\n\nStatus: generated starter files, not deployed or runtime-verified.\n\n## Prerequisites\nConfirm that the existing image `{image}` is trusted and listens on port {port}. Docker Compose is required. No application code or image is built by this package. Review capabilities and writable paths for your application.\n\n## Review and validation\nRun `docker compose config --quiet` to validate the Compose file before starting anything. We use it to catch configuration errors.\nRun `docker compose up -d` only in the agreed test environment to start the application after approval.\nRun `curl --fail http://127.0.0.1:8080{health}` to check the agreed readiness endpoint. We use this to check an actual application response; it is not a load or security test.\nInspect application logs locally and redact secrets before sharing.\n\n## Rollback\nRecord the previous immutable image digest before deployment. Restore that digest in compose.yaml and recreate the service only after approval. Data changes and database rollback require a separate backup plan.\n\n## Still required\nRegistry access, runtime validation, DNS/TLS, backups, application configuration and customer acceptance. No infrastructure was changed.\n',
                 'acceptance.json': json.dumps(dict(job=job['id'], image=image, internal_port=port, health_path=health, runtime_verified=False, customer_accepted=False), indent=2),
@@ -257,7 +316,7 @@ class Workspace:
                 raise ValueError('Generate starter files first')
             files = job['artifacts']
             checks = dict(required_files=all(p in files for p in ('compose.yaml','HANDOVER.md','acceptance.json','.env.example')),
-                          loopback_binding='127.0.0.1:8080:' in files.get('compose.yaml',''),
+                          loopback_binding='127.0.0.1:${OPS_PILOT_HOST_PORT:-8080}:' in files.get('compose.yaml',''),
                           no_privileged='privileged:' not in files.get('compose.yaml',''),
                           no_host_mounts='volumes:' not in files.get('compose.yaml',''))
             job['state'] = 'reviewed'
@@ -265,7 +324,7 @@ class Workspace:
                         runtime_verified=False, security_audit=False, note='Static starter-bundle checks only. Run agreed acceptance checks before claiming completion.')
         if name == 'delivery':
             approval = job['approvals'].get('delivery')
-            if job['state'] != 'reviewed' or not approval or approval['digest'] != self.digest(job):
+            if job['state'] != 'reviewed' or not self.approval_valid(approval) or approval['digest'] != self.digest(job):
                 raise ValueError('Owner must sign off this exact reviewed bundle first')
             job['state'] = 'packaged'
             return dict(download=f'/api/freelance/package?job_id={job["id"]}', sent=False,

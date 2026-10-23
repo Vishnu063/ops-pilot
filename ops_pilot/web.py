@@ -162,7 +162,7 @@ class Handler(BaseHTTPRequestHandler):
             return self.send(200, result)
         except PermissionError as exc:
             return self.send(403, {'error': str(exc)})
-        except (ValueError, TypeError) as exc:
+        except (ValueError, TypeError, KeyError) as exc:
             return self.send(409, {'error': str(exc)})
         except OSError:
             return self.send(503, {'error': 'Workspace storage unavailable'})

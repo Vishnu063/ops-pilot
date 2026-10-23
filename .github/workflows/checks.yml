@@ -51,11 +51,17 @@ jobs:
         run: |
           set -o pipefail
           python -m unittest discover -s tests -p test_docker_lab.py -v 2>&1 | tee docker-lab-results.txt
+      - name: Actual generated bundle practice deployment
+        env:
+          OPS_PILOT_GENERATED_LAB: '1'
+        run: python -m unittest discover -s tests -p test_generated_bundle_lab.py -v
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: docker-lab-evidence
-          path: docker-lab-results.txt
+          path: |
+            docker-lab-results.txt
+            generated-lab-evidence.json
           if-no-files-found: ignore
           retention-days: 30
   browser:

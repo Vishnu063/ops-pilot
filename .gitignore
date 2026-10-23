@@ -12,3 +12,8 @@ browser-evidence/
 
 n8n/.env
 freelance-evidence/
+
+*.sqlite3*
+backups/
+n8n-evidence/
+generated-lab-evidence.json

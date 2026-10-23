@@ -38,11 +38,11 @@ fields=[dropdown('Task',['View board','Import listing','Generate starter files',
         field('Project title'),field('Requirements','textarea'),field('Source',placeholder='Upwork, Fiverr or direct client'),
         field('Listing URL'),field('Budget',placeholder='0.00'),dropdown('Currency',['USD','INR','EUR','GBP']),
         field('Job ID',placeholder='Copy from the board'),field('Revision','number',placeholder='Copy current revision from the board'),
-        dropdown('Decision',['approve_proposal','accept','approve_work','sign_off','delivery','earnings','payment','reject','edit_proposal']),
+        dropdown('Decision',['approve_proposal','accept','approve_work','sign_off','delivery','earnings','payment','reject','edit_proposal','brief','task','scope_change','invoice','expense','time_entry','validation','customer_acceptance','offboard','close']),
         field('Confirm job ID',placeholder='Type the ID for acceptance, work approval or sign-off'),
         field('Application image',placeholder='Existing trusted image, for starter files only'),
         field('Internal port','number',placeholder='8000'),field('Health path',placeholder='/health'),
-        field('Edited proposal','textarea'),field('Payment amount'),field('Platform fee'),field('Payment reference')]
+        field('Record JSON','textarea',placeholder='For business records only: JSON object matching the owner desk schema'),field('Edited proposal','textarea'),field('Payment amount'),field('Platform fee'),field('Payment reference')]
 node('Freelance control centre','formTrigger',dict(authentication='basicAuth',formTitle='Ops Pilot · Freelance control centre',
      formDescription='View all nine roles, project outputs and earnings. Choose a task. For View board, other fields can stay empty/default. Import needs title and requirements. Generate needs job ID, revision and image. Owner decisions need current job ID and revision; confirm the ID when requested. No live deployment or client submission.',
      formFields={'values':fields},responseMode='responseNode',options={}),[0,400],2.2,
@@ -64,7 +64,7 @@ link(last,end)
 worker=http('06 · DevOps worker',[560,240],"{action:'worker',job_id:$json['Job ID'],revision:Number($json.Revision),data:{image:$json['Application image'],port:Number($json['Internal port'] || 8000),health_path:$json['Health path'] || '/health'}}")
 link('Manager · route owner request',worker,1)
 reviewer=agent('07 · Reviewer','reviewer',[820,240]);link(worker,reviewer);link(reviewer,end)
-owner=http('Owner decision · explicit review',[560,480],"{action:$json.Decision,job_id:$json['Job ID'],revision:Number($json.Revision),data:{confirmation:$json['Confirm job ID'] || '',draft:$json['Edited proposal'] || '',amount:$json['Payment amount'] || '0',fee:$json['Platform fee'] || '0',reference:$json['Payment reference'] || ''}}",role='owner')
+owner=http('Owner decision · explicit review',[560,480],"{action:$json.Decision,job_id:$json['Job ID'],revision:Number($json.Revision),data: ($json['Record JSON'] ? JSON.parse($json['Record JSON']) : {confirmation:$json['Confirm job ID'] || '',draft:$json['Edited proposal'] || '',amount:$json['Payment amount'] || '0',fee:$json['Platform fee'] || '0',reference:$json['Payment reference'] || ''})}",role='owner')
 
 # Delivery is a distinct worker node: choose delivery in the owner form, route to it, never pretend it ran otherwise.
 node('Delivery requested?','if',{'conditions':{'options':{'caseSensitive':True,'leftValue':'','typeValidation':'strict','version':2},
@@ -87,7 +87,7 @@ for name,content,xy,w,h,color in [
  ('View lane','## 04 / YOUR BOARD\nAll job outputs, artifact contents, statuses and earnings. Download packaged files using the fifth route.',[1130,810],750,180,6)]:
  node(name,'stickyNote',dict(content=content,width=w,height=h,color=color),xy)
 workflow=dict(name='Ops Pilot · Freelance Agency · 9 roles',nodes=NODES,connections=CONNECTIONS,active=False,
-              settings={'executionOrder':'v1','saveDataErrorExecution':'all','saveDataSuccessExecution':'all','saveManualExecutions':True},
+              settings={'executionOrder':'v1','saveDataErrorExecution':'none','saveDataSuccessExecution':'none','saveManualExecutions':False},
               pinData={},tags=[],versionId=str(uuid.uuid5(uuid.NAMESPACE_URL,'ops-pilot-freelance-v1')))
 (ROOT/'n8n/freelance-agency.json').write_text(json.dumps(workflow,indent=2)+'\n')
 print('Generated',len(NODES),'nodes with',len(CONNECTIONS),'connections')
