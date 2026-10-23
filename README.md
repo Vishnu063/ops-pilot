@@ -23,6 +23,16 @@ reported **Recovery checks passed** after the repair flow. This is user-reported
 demo evidence, not an independently captured production test. CloudLaunch/PharmaCare
 was not involved.
 
+## New: Freelance studio + n8n control centre
+
+A separate workspace now tracks freelance projects through nine bounded local roles: Scout, Evaluator, Manager, Client assistant, Proposal writer, DevOps worker, Reviewer, Delivery and Earnings. It records outputs and explicit owner decisions, generates Docker deployment **starter files for an existing image**, checks them statically and packages a signed-off handover. No platform account, AI model, customer deployment or payment processor is connected.
+
+![Freelance studio — synthetic demonstration](docs/images/freelance-studio.png)
+
+**[Open the easy setup guide](docs/FREELANCE.md)** · **[Import the n8n canvas](n8n/freelance-agency.json)** · [Observed validation](docs/FREELANCE-VALIDATION.md)
+
+The n8n control form supports importing a listing, viewing all project outputs and files, owner decisions, worker/reviewer execution, earnings and ZIP download. Credentials and a running backend must be configured on your own server. The original monitoring dashboard links to `/freelance`; standalone mode also works without a configured Docker target. These additions do not turn the preview into an autonomous or production-ready freelance business.
+
 ## Setup on Ubuntu / EC2
 
 Run the server commands below in your **EC2 SSH terminal**. Run only the SSH

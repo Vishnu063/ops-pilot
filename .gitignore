@@ -9,3 +9,6 @@ config.json
 state/
 *.db
 browser-evidence/
+
+n8n/.env
+freelance-evidence/

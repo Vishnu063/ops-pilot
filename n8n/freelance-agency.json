@@ -1,0 +1,1064 @@
+{
+  "name": "Ops Pilot \u00b7 Freelance Agency \u00b7 9 roles",
+  "nodes": [
+    {
+      "id": "aa931cf5-4229-5157-b4fe-2d663df1ef3d",
+      "name": "Freelance control centre",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        400
+      ],
+      "parameters": {
+        "authentication": "basicAuth",
+        "formTitle": "Ops Pilot \u00b7 Freelance control centre",
+        "formDescription": "View all nine roles, project outputs and earnings. Choose a task. For View board, other fields can stay empty/default. Import needs title and requirements. Generate needs job ID, revision and image. Owner decisions need current job ID and revision; confirm the ID when requested. No live deployment or client submission.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Task",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "View board"
+                  },
+                  {
+                    "option": "Import listing"
+                  },
+                  {
+                    "option": "Generate starter files"
+                  },
+                  {
+                    "option": "Owner decision"
+                  },
+                  {
+                    "option": "Download handover"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Project title",
+              "fieldType": "text"
+            },
+            {
+              "fieldLabel": "Requirements",
+              "fieldType": "textarea"
+            },
+            {
+              "fieldLabel": "Source",
+              "fieldType": "text",
+              "placeholder": "Upwork, Fiverr or direct client"
+            },
+            {
+              "fieldLabel": "Listing URL",
+              "fieldType": "text"
+            },
+            {
+              "fieldLabel": "Budget",
+              "fieldType": "text",
+              "placeholder": "0.00"
+            },
+            {
+              "fieldLabel": "Currency",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "USD"
+                  },
+                  {
+                    "option": "INR"
+                  },
+                  {
+                    "option": "EUR"
+                  },
+                  {
+                    "option": "GBP"
+                  }
+                ]
+              },
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Job ID",
+              "fieldType": "text",
+              "placeholder": "Copy from the board"
+            },
+            {
+              "fieldLabel": "Revision",
+              "fieldType": "number",
+              "placeholder": "Copy current revision from the board"
+            },
+            {
+              "fieldLabel": "Decision",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "approve_proposal"
+                  },
+                  {
+                    "option": "accept"
+                  },
+                  {
+                    "option": "approve_work"
+                  },
+                  {
+                    "option": "sign_off"
+                  },
+                  {
+                    "option": "delivery"
+                  },
+                  {
+                    "option": "earnings"
+                  },
+                  {
+                    "option": "payment"
+                  },
+                  {
+                    "option": "reject"
+                  },
+                  {
+                    "option": "edit_proposal"
+                  }
+                ]
+              },
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Confirm job ID",
+              "fieldType": "text",
+              "placeholder": "Type the ID for acceptance, work approval or sign-off"
+            },
+            {
+              "fieldLabel": "Application image",
+              "fieldType": "text",
+              "placeholder": "Existing trusted image, for starter files only"
+            },
+            {
+              "fieldLabel": "Internal port",
+              "fieldType": "number",
+              "placeholder": "8000"
+            },
+            {
+              "fieldLabel": "Health path",
+              "fieldType": "text",
+              "placeholder": "/health"
+            },
+            {
+              "fieldLabel": "Edited proposal",
+              "fieldType": "textarea"
+            },
+            {
+              "fieldLabel": "Payment amount",
+              "fieldType": "text"
+            },
+            {
+              "fieldLabel": "Platform fee",
+              "fieldType": "text"
+            },
+            {
+              "fieldLabel": "Payment reference",
+              "fieldType": "text"
+            }
+          ]
+        },
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "webhookId": "ops-pilot-freelance-control",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "CONFIGURE_FORM_LOGIN",
+          "name": "Ops Pilot Form Login"
+        }
+      }
+    },
+    {
+      "id": "1790cef8-1753-51f6-803d-f488d76da1af",
+      "name": "Manager \u00b7 route owner request",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        270,
+        400
+      ],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "37d494c2-d880-5d7f-86f8-8ba3aa15e142",
+                    "leftValue": "={{ $json.Task }}",
+                    "rightValue": "Import listing",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Import listing"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "e707f8e4-2bfc-5f32-af9e-fcf94b5b26a5",
+                    "leftValue": "={{ $json.Task }}",
+                    "rightValue": "Generate starter files",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Generate starter files"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "96e93a9d-b3da-5efa-bed7-6abb17ce50e4",
+                    "leftValue": "={{ $json.Task }}",
+                    "rightValue": "Owner decision",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Owner decision"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "cdfd5137-ab96-5d53-b322-48be3d5ad092",
+                    "leftValue": "={{ $json.Task }}",
+                    "rightValue": "View board",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "View board"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "f27c45d4-5e66-5169-8331-82555f7efd86",
+                    "leftValue": "={{ $json.Task }}",
+                    "rightValue": "Download handover",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Download handover"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "f9296a14-d85a-52e9-91d7-074d0caacc2a",
+      "name": "Import owner-provided listing",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        560,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8767/bridge/action",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 10000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { action:'import', data:{ title:$json['Project title'], description:$json.Requirements, platform:$json.Source || 'manual', url:$json['Listing URL'] || '', budget:String($json.Budget || '0'), currency:$json.Currency || 'USD' } } }}"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "CONFIGURE_WORKFLOW_CREDENTIAL",
+          "name": "Ops Pilot Workflow"
+        }
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "f88755ed-d1ab-5b64-9b19-ac1423165d65",
+      "name": "01 \u00b7 Scout",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        790,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8767/bridge/action",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 10000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { action: 'scout', job_id: $json.job.id, revision: $json.job.revision } }}"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "CONFIGURE_WORKFLOW_CREDENTIAL",
+          "name": "Ops Pilot Workflow"
+        }
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "1c9d8582-558a-52b4-ac2e-3629a0af6a49",
+      "name": "02 \u00b7 Evaluator",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1020,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8767/bridge/action",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 10000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { action: 'evaluator', job_id: $json.job.id, revision: $json.job.revision } }}"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "CONFIGURE_WORKFLOW_CREDENTIAL",
+          "name": "Ops Pilot Workflow"
+        }
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "6347ed58-f962-59ed-8249-a2c8013f4057",
+      "name": "03 \u00b7 Manager",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1250,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8767/bridge/action",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 10000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { action: 'manager', job_id: $json.job.id, revision: $json.job.revision } }}"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "CONFIGURE_WORKFLOW_CREDENTIAL",
+          "name": "Ops Pilot Workflow"
+        }
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "2ddee14e-2deb-572f-abc6-5b95a937d7f4",
+      "name": "04 \u00b7 Client assistant",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1480,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8767/bridge/action",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 10000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { action: 'client', job_id: $json.job.id, revision: $json.job.revision } }}"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "CONFIGURE_WORKFLOW_CREDENTIAL",
+          "name": "Ops Pilot Workflow"
+        }
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "f6d3f2fd-6833-59d9-b7e1-b21dd03a2ece",
+      "name": "05 \u00b7 Proposal writer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1710,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8767/bridge/action",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 10000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { action: 'proposal', job_id: $json.job.id, revision: $json.job.revision } }}"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "CONFIGURE_WORKFLOW_CREDENTIAL",
+          "name": "Ops Pilot Workflow"
+        }
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "65bba9bc-3888-5181-b1a4-bff23b6dd66d",
+      "name": "All projects and outputs",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [
+        2210,
+        400
+      ],
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "showText",
+        "responseText": "={{ $json.summary_html }}"
+      }
+    },
+    {
+      "id": "35668660-d416-5239-9a6c-1c96ac77d801",
+      "name": "06 \u00b7 DevOps worker",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        560,
+        240
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8767/bridge/action",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 10000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {action:'worker',job_id:$json['Job ID'],revision:Number($json.Revision),data:{image:$json['Application image'],port:Number($json['Internal port'] || 8000),health_path:$json['Health path'] || '/health'}} }}"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "CONFIGURE_WORKFLOW_CREDENTIAL",
+          "name": "Ops Pilot Workflow"
+        }
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "17edfe79-4969-5b42-8cfb-16cfde3fa9f0",
+      "name": "07 \u00b7 Reviewer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        820,
+        240
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8767/bridge/action",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 10000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { action: 'reviewer', job_id: $json.job.id, revision: $json.job.revision } }}"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "CONFIGURE_WORKFLOW_CREDENTIAL",
+          "name": "Ops Pilot Workflow"
+        }
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "a49763bf-b109-51f0-b15a-056ca11c8f03",
+      "name": "Owner decision \u00b7 explicit review",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        560,
+        480
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8767/bridge/action",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 10000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {action:$json.Decision,job_id:$json['Job ID'],revision:Number($json.Revision),data:{confirmation:$json['Confirm job ID'] || '',draft:$json['Edited proposal'] || '',amount:$json['Payment amount'] || '0',fee:$json['Platform fee'] || '0',reference:$json['Payment reference'] || ''}} }}"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "CONFIGURE_OWNER_CREDENTIAL",
+          "name": "Ops Pilot Owner"
+        }
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "6ad13b70-69fe-594e-9567-c65b270b22ad",
+      "name": "Delivery requested?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        820,
+        480
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "delivery-condition",
+              "leftValue": "={{ $('Freelance control centre').first().json.Decision }}",
+              "rightValue": "delivery",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "99426cdb-cc99-534b-9774-35a1b448f267",
+      "name": "08 \u00b7 Delivery assistant",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1080,
+        430
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8767/bridge/action",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 10000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {action:'delivery',job_id:$json['Job ID'],revision:Number($json.Revision)} }}"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "CONFIGURE_WORKFLOW_CREDENTIAL",
+          "name": "Ops Pilot Workflow"
+        }
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "9eb55853-5b60-5815-85bc-af24c323ae7e",
+      "name": "09 \u00b7 Earnings tracker",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1370,
+        480
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8767/bridge/action",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 10000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { action: 'earnings', job_id: $json.job.id, revision: $json.job.revision } }}"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "CONFIGURE_WORKFLOW_CREDENTIAL",
+          "name": "Ops Pilot Workflow"
+        }
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "c5f29bd9-2df7-5837-a6b4-f251604d2ada",
+      "name": "Refresh full board",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        560,
+        740
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8767/bridge/board",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "CONFIGURE_WORKFLOW_CREDENTIAL",
+          "name": "Ops Pilot Workflow"
+        }
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "5b333973-4316-5fa3-9fac-e3418343b496",
+      "name": "Download reviewed ZIP",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        560,
+        980
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=http://127.0.0.1:8767/bridge/package?job_id={{ encodeURIComponent($json[\"Job ID\"]) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 10000,
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "data"
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "CONFIGURE_WORKFLOW_CREDENTIAL",
+          "name": "Ops Pilot Workflow"
+        }
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "c9fc23fa-5929-535f-a2ba-85cfa5895a34",
+      "name": "Handover ZIP",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [
+        900,
+        980
+      ],
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "returnBinary",
+        "inputDataFieldName": "data",
+        "completionTitle": "Reviewed starter bundle",
+        "completionMessage": "Generated files only. No live deployment or client submission."
+      }
+    },
+    {
+      "id": "d592ae7e-62e3-5a11-bbfa-80e7b0868a6a",
+      "name": "Start here",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -30,
+        -390
+      ],
+      "parameters": {
+        "content": "## FREELANCE STUDIO\nOne control form \u00b7 five routes \u00b7 nine bounded local roles\nConfigure Form Login + Workflow + Owner credentials. Use Execute Workflow, then submit the form. No credentials are included.",
+        "width": 650,
+        "height": 240,
+        "color": 6
+      }
+    },
+    {
+      "id": "787a3b2b-f476-5c25-b704-70f7e9c62676",
+      "name": "Intake lane",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        550,
+        -220
+      ],
+      "parameters": {
+        "content": "## 01 / DISCOVER & PLAN\nOwner-provided text \u2192 skill match \u2192 questions \u2192 proposal. No scraping or auto-bidding.",
+        "width": 1600,
+        "height": 180,
+        "color": 4
+      }
+    },
+    {
+      "id": "f30664e3-9fc2-5165-bf08-1ec225bceb46",
+      "name": "Work lane",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        550,
+        110
+      ],
+      "parameters": {
+        "content": "## 02 / BUILD & CHECK\nRequires recorded client acceptance + separate work approval. Existing Docker image only. Static review, not live validation.",
+        "width": 1080,
+        "height": 100,
+        "color": 5
+      }
+    },
+    {
+      "id": "6fb7b75e-4936-56d4-ae7a-421d2d9bdb42",
+      "name": "Owner lane",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        550,
+        590
+      ],
+      "parameters": {
+        "content": "## 03 / YOU DECIDE\nApprove proposal \u2192 accept \u2192 approve work \u2192 generate \u2192 review \u2192 sign off \u2192 package. Use current revision. Owner credential belongs only on this lane.",
+        "width": 1080,
+        "height": 100,
+        "color": 3
+      }
+    },
+    {
+      "id": "02fd2e49-90ec-59c8-9fea-3145cb9dac3a",
+      "name": "View lane",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1130,
+        810
+      ],
+      "parameters": {
+        "content": "## 04 / YOUR BOARD\nAll job outputs, artifact contents, statuses and earnings. Download packaged files using the fifth route.",
+        "width": 750,
+        "height": 180,
+        "color": 6
+      }
+    }
+  ],
+  "connections": {
+    "Freelance control centre": {
+      "main": [
+        [
+          {
+            "node": "Manager \u00b7 route owner request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manager \u00b7 route owner request": {
+      "main": [
+        [
+          {
+            "node": "Import owner-provided listing",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "06 \u00b7 DevOps worker",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Delivery requested?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Refresh full board",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Download reviewed ZIP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Import owner-provided listing": {
+      "main": [
+        [
+          {
+            "node": "01 \u00b7 Scout",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "01 \u00b7 Scout": {
+      "main": [
+        [
+          {
+            "node": "02 \u00b7 Evaluator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "02 \u00b7 Evaluator": {
+      "main": [
+        [
+          {
+            "node": "03 \u00b7 Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "03 \u00b7 Manager": {
+      "main": [
+        [
+          {
+            "node": "04 \u00b7 Client assistant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "04 \u00b7 Client assistant": {
+      "main": [
+        [
+          {
+            "node": "05 \u00b7 Proposal writer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "05 \u00b7 Proposal writer": {
+      "main": [
+        [
+          {
+            "node": "All projects and outputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "06 \u00b7 DevOps worker": {
+      "main": [
+        [
+          {
+            "node": "07 \u00b7 Reviewer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "07 \u00b7 Reviewer": {
+      "main": [
+        [
+          {
+            "node": "All projects and outputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delivery requested?": {
+      "main": [
+        [
+          {
+            "node": "08 \u00b7 Delivery assistant",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Owner decision \u00b7 explicit review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "08 \u00b7 Delivery assistant": {
+      "main": [
+        [
+          {
+            "node": "09 \u00b7 Earnings tracker",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Owner decision \u00b7 explicit review": {
+      "main": [
+        [
+          {
+            "node": "09 \u00b7 Earnings tracker",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "09 \u00b7 Earnings tracker": {
+      "main": [
+        [
+          {
+            "node": "All projects and outputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Refresh full board": {
+      "main": [
+        [
+          {
+            "node": "All projects and outputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download reviewed ZIP": {
+      "main": [
+        [
+          {
+            "node": "Handover ZIP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true
+  },
+  "pinData": {},
+  "tags": [],
+  "versionId": "514b610b-002e-517b-b05d-6fa7f34dd052"
+}
