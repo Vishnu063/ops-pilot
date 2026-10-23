@@ -12,8 +12,8 @@ from ops_pilot.freelance import Workspace
 class GeneratedBundleLab(unittest.TestCase):
     def test_generated_bundle_readiness_cleanup_and_unhealthy_path(self):
         # Pulling this practice image is a CI setup action, never performed by the worker.
-        subprocess.run(['docker','pull','nginx:alpine'],check=True,capture_output=True,timeout=120)
-        image = json.loads(subprocess.check_output(['docker','image','inspect','nginx:alpine']))[0]['RepoDigests'][0]
+        subprocess.run(['docker','pull','nginxinc/nginx-unprivileged:alpine'],check=True,capture_output=True,timeout=120)
+        image = json.loads(subprocess.check_output(['docker','image','inspect','nginxinc/nginx-unprivileged:alpine']))[0]['RepoDigests'][0]
         with tempfile.TemporaryDirectory() as directory:
             ws = Workspace(directory)
             previous = {k:os.environ.get(k) for k in ('OPS_PILOT_LAB','OPS_PILOT_LAB_IMAGES')}
@@ -27,8 +27,9 @@ class GeneratedBundleLab(unittest.TestCase):
                         job=ws.act(dict(action=action,job_id=job['id'],revision=job['revision'],data=data or {}),owner=True)['job']
                     for a in ('scout','evaluator','manager','client','proposal','approve_proposal'): act(a)
                     act('accept',dict(confirmation=job['id']));act('approve_work',dict(confirmation=job['id']))
-                    act('worker',dict(image=image,port=80,health_path=health))
+                    act('worker',dict(image=image,port=8080,health_path=health))
                     act('approve_lab',dict(confirmation=job['id']));act('lab_run')
+                    print(json.dumps(job['lab'],sort_keys=True),flush=True)
                     self.assertEqual('verified',job['lab']['cleanup'])
                     self.assertEqual('passed' if health=='/' else 'failed',job['lab']['status'])
                     self.assertEqual(health=='/',job['lab']['runtime_verified'])

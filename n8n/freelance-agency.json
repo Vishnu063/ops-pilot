@@ -124,6 +124,36 @@
                   },
                   {
                     "option": "edit_proposal"
+                  },
+                  {
+                    "option": "brief"
+                  },
+                  {
+                    "option": "task"
+                  },
+                  {
+                    "option": "scope_change"
+                  },
+                  {
+                    "option": "invoice"
+                  },
+                  {
+                    "option": "expense"
+                  },
+                  {
+                    "option": "time_entry"
+                  },
+                  {
+                    "option": "validation"
+                  },
+                  {
+                    "option": "customer_acceptance"
+                  },
+                  {
+                    "option": "offboard"
+                  },
+                  {
+                    "option": "close"
                   }
                 ]
               },
@@ -148,6 +178,11 @@
               "fieldLabel": "Health path",
               "fieldType": "text",
               "placeholder": "/health"
+            },
+            {
+              "fieldLabel": "Record JSON",
+              "fieldType": "textarea",
+              "placeholder": "For business records only: JSON object matching the owner desk schema"
             },
             {
               "fieldLabel": "Edited proposal",
@@ -581,7 +616,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ {action:$json.Decision,job_id:$json['Job ID'],revision:Number($json.Revision),data:{confirmation:$json['Confirm job ID'] || '',draft:$json['Edited proposal'] || '',amount:$json['Payment amount'] || '0',fee:$json['Platform fee'] || '0',reference:$json['Payment reference'] || ''}} }}"
+        "jsonBody": "={{ {action:$json.Decision,job_id:$json['Job ID'],revision:Number($json.Revision),data: ($json['Record JSON'] ? JSON.parse($json['Record JSON']) : {confirmation:$json['Confirm job ID'] || '',draft:$json['Edited proposal'] || '',amount:$json['Payment amount'] || '0',fee:$json['Platform fee'] || '0',reference:$json['Payment reference'] || ''})} }}"
       },
       "credentials": {
         "httpHeaderAuth": {
@@ -1054,9 +1089,9 @@
   "active": false,
   "settings": {
     "executionOrder": "v1",
-    "saveDataErrorExecution": "all",
-    "saveDataSuccessExecution": "all",
-    "saveManualExecutions": true
+    "saveDataErrorExecution": "none",
+    "saveDataSuccessExecution": "none",
+    "saveManualExecutions": false
   },
   "pinData": {},
   "tags": [],
