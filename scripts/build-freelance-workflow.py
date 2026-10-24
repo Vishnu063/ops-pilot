@@ -61,7 +61,7 @@ for i,(name,action) in enumerate([('01 · Scout','scout'),('02 · Evaluator','ev
     nxt=agent(name,action,[790+230*i,0]);link(last,nxt);last=nxt
 end=node('All projects and outputs','form',dict(operation='completion',respondWith='showText',responseText='={{ $json.summary_html }}'),[2210,400])
 link(last,end)
-worker=http('06 · DevOps worker',[560,240],"{action:'worker',job_id:$json['Job ID'],revision:Number($json.Revision),data:{image:$json['Application image'],port:Number($json['Internal port'] || 8000),health_path:$json['Health path'] || '/health'}}")
+worker=http('06 · DevOps worker',[560,240],"{action:'worker',job_id:$json['Job ID'],revision:Number($json.Revision),data:{image:$json['Application image'],port:Number($json['Internal port'] || 8000),health_path:$json['Health path'] || '/health'} }")
 link('Manager · route owner request',worker,1)
 reviewer=agent('07 · Reviewer','reviewer',[820,240]);link(worker,reviewer);link(reviewer,end)
 owner=http('Owner decision · explicit review',[560,480],"{action:$json.Decision,job_id:$json['Job ID'],revision:Number($json.Revision),data: ($json['Record JSON'] ? JSON.parse($json['Record JSON']) : {confirmation:$json['Confirm job ID'] || '',draft:$json['Edited proposal'] || '',amount:$json['Payment amount'] || '0',fee:$json['Platform fee'] || '0',reference:$json['Payment reference'] || ''})}",role='owner')

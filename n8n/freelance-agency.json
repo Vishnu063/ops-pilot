@@ -558,7 +558,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ {action:'worker',job_id:$json['Job ID'],revision:Number($json.Revision),data:{image:$json['Application image'],port:Number($json['Internal port'] || 8000),health_path:$json['Health path'] || '/health'}} }}"
+        "jsonBody": "={{ {action:'worker',job_id:$json['Job ID'],revision:Number($json.Revision),data:{image:$json['Application image'],port:Number($json['Internal port'] || 8000),health_path:$json['Health path'] || '/health'} } }}"
       },
       "credentials": {
         "httpHeaderAuth": {

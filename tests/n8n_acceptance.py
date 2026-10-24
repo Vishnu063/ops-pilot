@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 import secrets
 import socket
+import sqlite3
 import subprocess
 import sys
 import tempfile
@@ -95,6 +96,7 @@ def main():
                 assert anon.request.get(url).status==401,'Form must require basic authentication'
                 anon.close()
                 def submit(values,ending=True):
+                    (OUT/'stage.json').write_text(json.dumps(dict(task=values.get('Task'),decision=values.get('Decision')),indent=2))
                     page.goto(url)
                     for index,field in enumerate(fields):
                         label=field['fieldLabel']
@@ -150,6 +152,14 @@ def main():
             if process:
                 log.close()
                 (OUT/'runtime.txt').write_text(sanitized((private/'runtime.log').read_text())[-20000:])
+            (OUT/'workspace.json').write_text(sanitized(json.dumps(ws.state(),indent=2)))
+            databases=list((private/'n8n').rglob('database.sqlite'))
+            if databases:
+                try:
+                    with sqlite3.connect(databases[0]) as database:
+                        data=database.execute('SELECT data FROM execution_data ORDER BY executionId DESC LIMIT 2').fetchall()
+                    (OUT/'execution-diagnostics.txt').write_text(sanitized('\n'.join(row[0] for row in data))[-60000:])
+                except sqlite3.Error:pass
             server.shutdown();server.server_close();thread.join()
     print('Real isolated n8n acceptance passed: authenticated forms, nine roles, business records, stale error and ZIP response.')
 

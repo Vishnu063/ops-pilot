@@ -19,6 +19,8 @@ for n in nodes.values():
   role=n['credentials']['httpHeaderAuth']['name']
   assert role==('Ops Pilot Owner' if n['name']=='Owner decision · explicit review' else 'Ops Pilot Workflow')
   assert n.get('retryOnFail') is False
+  body=n['parameters'].get('jsonBody','')
+  if body: assert body.find('}}')==len(body)-2, 'Expression delimiter must follow all object closures'
   assert n['parameters']['url'].lstrip('=').startswith('http://127.0.0.1:8767/bridge/')
 for name in ['01 · Scout','02 · Evaluator','03 · Manager','04 · Client assistant','05 · Proposal writer','06 · DevOps worker','07 · Reviewer','08 · Delivery assistant','09 · Earnings tracker']:
  assert name in nodes

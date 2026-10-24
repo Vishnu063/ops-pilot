@@ -36,3 +36,5 @@ Local disposable n8n installation failed following network errors, then exhauste
 The real n8n run exposed a foundation runtime error that import/structural checks had missed: Form Trigger responseMode=responseNode requires a Respond to Webhook node and conflicts with the Form Ending design. The generator now uses lastNode (Workflow Finishes); actual acceptance is rerun after this correction.
 
 The next real form test reached submission and exposed another runtime requirement: n8n completion polling needs successful execution persistence. The workflow retains the foundation setting to save executions, with private n8n access and bounded retention required. Disabling payload persistence broke completion and was reverted; keeping secrets out of forms remains essential.
+
+Real n8n intake/planning and owner approvals then passed. The generated-file route exposed an adjacent `}}` object closure inside its expression; those braces are separated so they cannot be read as the expression terminator. Runtime acceptance continues beyond that fix.
