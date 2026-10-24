@@ -78,6 +78,7 @@ jobs:
         run: |
           python tests/browser_acceptance.py
           python tests/freelance_browser.py
+          python tests/ecosystem_browser.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -136,3 +137,4 @@ jobs:
           path: n8n-evidence/
           if-no-files-found: ignore
           retention-days: 30
+

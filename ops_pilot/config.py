@@ -11,9 +11,9 @@ DEFAULT_STATE = Path.home() / ".local/state/ops-pilot"
 
 
 def validate(value):
-    allowed = {"name", "docker_context", "container", "health_url", "interval_seconds", "alert_url"}
+    allowed = {"name", "docker_context", "container", "health_url", "interval_seconds", "alert_url", "health_attempts", "health_interval"}
     if not isinstance(value, dict) or set(value) - allowed:
-        raise ValueError("Use only name, docker_context, container, health_url, interval_seconds and optional alert_url")
+        raise ValueError("Use only documented target, interval, alert and bounded health-policy fields")
     for key in ("name", "docker_context", "container", "health_url"):
         item = value.get(key)
         if not isinstance(item, str) or not item.strip() or len(item) > 500 or any(ord(c) < 32 for c in item):
@@ -24,7 +24,10 @@ def validate(value):
     interval = value.get("interval_seconds", 30)
     if type(interval) is not int or not 15 <= interval <= 3600:
         raise ValueError("interval_seconds must be an integer between 15 and 3600")
-    health = {"url": value["health_url"], "attempts": 3, "successes": 2, "timeout": 3, "interval": 1}
+    attempts=value.get("health_attempts",3); probe_interval=value.get("health_interval",1)
+    if type(attempts) is not int or not 3<=attempts<=5 or type(probe_interval) is not int or not 0<=probe_interval<=2:
+        raise ValueError("health_attempts must be 3–5 and health_interval 0–2 seconds")
+    health = {"url": value["health_url"], "attempts": attempts, "successes": 2, "timeout": 3, "interval": probe_interval}
     validate_health(health)
     if "alert_url" in value:
         url = value["alert_url"]
@@ -55,3 +58,4 @@ def save(path, value):
     finally:
         if os.path.exists(name):
             os.unlink(name)
+

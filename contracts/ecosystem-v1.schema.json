@@ -1,0 +1,507 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Vishnu063/devops-triage-assistant/ecosystem/1.0",
+  "title": "DevOps ecosystem v1.0 (runtime additionally enforces bounds and semantic enums)",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "correlation_id",
+        "data",
+        "id",
+        "schema_version",
+        "service",
+        "source",
+        "timestamp",
+        "type"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.0"
+        },
+        "type": {
+          "const": "DeploymentEvent"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "source": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "service": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "correlation_id": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "data": {
+          "type": "object",
+          "required": [
+            "release_id",
+            "status"
+          ]
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "correlation_id",
+        "data",
+        "id",
+        "schema_version",
+        "service",
+        "source",
+        "timestamp",
+        "type"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.0"
+        },
+        "type": {
+          "const": "MonitoringAlert"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "source": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "service": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "correlation_id": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "data": {
+          "type": "object",
+          "required": [
+            "alertname",
+            "fingerprint",
+            "status"
+          ]
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "correlation_id",
+        "data",
+        "id",
+        "schema_version",
+        "service",
+        "source",
+        "timestamp",
+        "type"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.0"
+        },
+        "type": {
+          "const": "Incident"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "source": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "service": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "correlation_id": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "data": {
+          "type": "object",
+          "required": [
+            "event_ids",
+            "status"
+          ]
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "correlation_id",
+        "data",
+        "id",
+        "schema_version",
+        "service",
+        "source",
+        "timestamp",
+        "type"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.0"
+        },
+        "type": {
+          "const": "Evidence"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "source": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "service": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "correlation_id": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "data": {
+          "type": "object",
+          "required": [
+            "observations",
+            "references"
+          ]
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "correlation_id",
+        "data",
+        "id",
+        "schema_version",
+        "service",
+        "source",
+        "timestamp",
+        "type"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.0"
+        },
+        "type": {
+          "const": "Diagnosis"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "source": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "service": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "correlation_id": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "data": {
+          "type": "object",
+          "required": [
+            "evidence_refs",
+            "hypotheses",
+            "uncertainty"
+          ]
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "correlation_id",
+        "data",
+        "id",
+        "schema_version",
+        "service",
+        "source",
+        "timestamp",
+        "type"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.0"
+        },
+        "type": {
+          "const": "RemediationProposal"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "source": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "service": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "correlation_id": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "data": {
+          "type": "object",
+          "required": [
+            "action",
+            "incident_id",
+            "plan_id",
+            "risk",
+            "rollback",
+            "verification"
+          ]
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "correlation_id",
+        "data",
+        "id",
+        "schema_version",
+        "service",
+        "source",
+        "timestamp",
+        "type"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.0"
+        },
+        "type": {
+          "const": "ApprovalDecision"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "source": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "service": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "correlation_id": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "data": {
+          "type": "object",
+          "required": [
+            "actor",
+            "decision",
+            "incident_id",
+            "plan_id"
+          ]
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "correlation_id",
+        "data",
+        "id",
+        "schema_version",
+        "service",
+        "source",
+        "timestamp",
+        "type"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.0"
+        },
+        "type": {
+          "const": "ExecutionResult"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "source": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "service": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "correlation_id": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "data": {
+          "type": "object",
+          "required": [
+            "incident_id",
+            "plan_id",
+            "status"
+          ]
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "correlation_id",
+        "data",
+        "id",
+        "schema_version",
+        "service",
+        "source",
+        "timestamp",
+        "type"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.0"
+        },
+        "type": {
+          "const": "VerificationResult"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "source": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "service": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "correlation_id": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "data": {
+          "type": "object",
+          "required": [
+            "checks",
+            "status"
+          ]
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "correlation_id",
+        "data",
+        "id",
+        "schema_version",
+        "service",
+        "source",
+        "timestamp",
+        "type"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.0"
+        },
+        "type": {
+          "const": "IncidentReport"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "source": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "service": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "correlation_id": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}\\Z"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "data": {
+          "type": "object",
+          "required": [
+            "incident_id",
+            "timeline",
+            "unresolved"
+          ]
+        }
+      }
+    }
+  ]
+}
