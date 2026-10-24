@@ -1,6 +1,7 @@
 {
   "status": "passed",
   "roles": 9,
+  "business_tools": true,
   "zip_downloaded": true,
   "mobile_overflow": false,
   "page_errors": [],

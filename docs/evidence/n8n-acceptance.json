@@ -5,6 +5,7 @@
   "roles": 9,
   "owner_decisions": true,
   "business_records": true,
+  "business_tools": true,
   "stale_refused": true,
   "zip_response": true,
   "synthetic_only": true,

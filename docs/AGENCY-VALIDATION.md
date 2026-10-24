@@ -1,14 +1,14 @@
 # Agency continuation validation
 
-**Baseline: all seven CI jobs passed on implementation commit `782a8aa428d6872e49f83d2924485ec7c321abe9`: [run 40047437636](https://github.com/Vishnu063/ops-pilot/actions/runs/40047437636).** That result applies to the prior baseline; the new business-assistance continuation is tracked below. Work continues on `feat/freelance-agency-studio` in [PR #4](https://github.com/Vishnu063/ops-pilot/pull/4); main was not updated or merged.
+**All seven CI jobs passed for the business-assistance continuation on commit `b9d5de58ab8e256b67768f2fef387531d537edc7`: [run 40052690755](https://github.com/Vishnu063/ops-pilot/actions/runs/40052690755).** This includes real browser and n8n acceptance of the three new owner actions. The final follow-up changes documentation and captured synthetic evidence only. Work continues on `feat/freelance-agency-studio` in [PR #4](https://github.com/Vishnu063/ops-pilot/pull/4); main was not updated or merged.
 
-The [50-step roadmap](AGENCY-ROADMAP.md) records **32 verified in repository/synthetic scope and 18 prepared/documented**. This is not a claim that 50 customer actions occurred or that the agency is production-ready.
+The [50-step roadmap](AGENCY-ROADMAP.md) records **35 verified in repository/synthetic scope and 15 prepared/documented**. This is not a claim that 50 customer actions occurred or that the agency is production-ready.
 
 ## Observed results
 
 | Check | Result and evidence | Boundary |
 | --- | --- | --- |
-| Local Python suite | 47 discovered, 43 passed, four opt-in Docker cases skipped | Skips are not passes. Tests use real local HTTP/SQLite; most Docker failures are simulated. |
+| Local Python suite | 53 discovered, 49 passed, four opt-in Docker cases skipped | Skips are not passes. Tests use real local HTTP/SQLite; most Docker failures are simulated. |
 | CI Python 3.11/3.12/3.13 | All passed, including installed CLI/setup smoke, syntax and workflow structure | Single-owner software; no hostile tenant security claim. |
 | Original Docker lab | Three actual container/recovery cases passed in CI | Preserves the pinned monitoring engine and separate repair approval. |
 | Generated-bundle Docker lab | Actual generated Compose config/start, healthy HTTP 200, unhealthy endpoint deadline and ownership-checked cleanup passed | Practice runtime only; both cleanups verified. No customer target accessed. |
@@ -58,4 +58,4 @@ No real client, signed agreement, verified authorization/access, customer target
 
 Adds deterministic owner-only quote calculation, requirements/intake inspection and saved requirements/progress/incident/overdue/follow-up drafts. No customer account, infrastructure, messaging or payment service is connected. Six new regression tests passed, including rounding/limits, quote approval invalidation and freeze, expired/unsupported requirements, manual-review-only readiness, per-project balances and owner-only unsent drafts.
 
-Current local full suite: 53 discovered, 49 passed, four Docker cases skipped. Installed CLI/setup smoke, Python/shell/JavaScript syntax and workflow structural/credential checks passed. The synthetic pilot now exercises a 100.10 estimate, complete synthetic intake and all five unsent draft types; those records remain explicitly synthetic. Browser and real n8n acceptance have been extended for all three new actions; their current CI run remains pending. Previous passing CI results do not verify these new code paths.
+Current local full suite: 53 discovered, 49 passed, four Docker cases skipped. Installed CLI/setup smoke, Python/shell/JavaScript syntax and workflow structural/credential checks passed. The synthetic pilot now exercises a 100.10 estimate, complete synthetic intake and all five unsent draft types; those records remain explicitly synthetic. All seven jobs passed in [run 40052690755](https://github.com/Vishnu063/ops-pilot/actions/runs/40052690755), including the extended browser and real n8n flows for quote, intake_check and draft_message. Updated synthetic desktop/mobile and n8n screenshots were visually reviewed; the current result files include business_tools=true. No local model service was reachable during this continuation, and no model was downloaded or started.
