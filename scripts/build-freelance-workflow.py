@@ -87,7 +87,7 @@ for name,content,xy,w,h,color in [
  ('View lane','## 04 / YOUR BOARD\nAll job outputs, artifact contents, statuses and earnings. Download packaged files using the fifth route.',[1130,810],750,180,6)]:
  node(name,'stickyNote',dict(content=content,width=w,height=h,color=color),xy)
 workflow=dict(name='Ops Pilot · Freelance Agency · 9 roles',nodes=NODES,connections=CONNECTIONS,active=False,
-              settings={'executionOrder':'v1','saveDataErrorExecution':'none','saveDataSuccessExecution':'none','saveManualExecutions':False},
+              settings={'executionOrder':'v1','saveDataErrorExecution':'all','saveDataSuccessExecution':'all','saveManualExecutions':True},
               pinData={},tags=[],versionId=str(uuid.uuid5(uuid.NAMESPACE_URL,'ops-pilot-freelance-v1')))
 (ROOT/'n8n/freelance-agency.json').write_text(json.dumps(workflow,indent=2)+'\n')
 print('Generated',len(NODES),'nodes with',len(CONNECTIONS),'connections')

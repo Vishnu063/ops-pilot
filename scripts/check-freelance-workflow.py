@@ -23,4 +23,5 @@ for n in nodes.values():
 for name in ['01 · Scout','02 · Evaluator','03 · Manager','04 · Client assistant','05 · Proposal writer','06 · DevOps worker','07 · Reviewer','08 · Delivery assistant','09 · Earnings tracker']:
  assert name in nodes
 assert 'pinData' in w and not w['pinData']
+assert w['settings']['saveDataSuccessExecution']=='all'  # n8n form completion polls persisted execution status
 print('Workflow structure and credential boundaries passed (23 nodes, 9 roles).')
