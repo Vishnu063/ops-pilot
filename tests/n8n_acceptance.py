@@ -3,6 +3,8 @@
 Requires N8N_EXECUTABLE pointing to an isolated n8n 2.44.6 install and Node >=24.
 No existing account or installation is changed. Secrets are generated in a private temp directory.
 """
+import base64
+import re
 import io
 import json
 import os
@@ -57,9 +59,14 @@ def main():
             'WEBHOOK_URL':f'http://127.0.0.1:{port}/','N8N_EDITOR_BASE_URL':f'http://127.0.0.1:{port}',
             'N8N_SECURE_COOKIE':'false','N8N_DIAGNOSTICS_ENABLED':'false','N8N_VERSION_NOTIFICATIONS_ENABLED':'false',
             'N8N_TEMPLATES_ENABLED':'false','N8N_RUNNERS_ENABLED':'false','N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS':'true'}
+        sensitive=[workflow_key,owner_key,password,env['N8N_ENCRYPTION_KEY'],base64.b64encode((user+':'+password).encode()).decode()]
+        def sanitized(value):
+            for secret in sensitive:value=value.replace(secret,'[redacted]')
+            return re.sub(r'(token=)[^ &\s]+',r'\1[redacted]',value)
         command=[os.environ.get('OPS_NODE','node'),runtime]
         def cli(*args):
             result=subprocess.run([*command,*args],env=env,capture_output=True,text=True,timeout=120)
+            with (OUT/'cli.txt').open('a') as output:output.write(sanitized(result.stdout+result.stderr))
             if result.returncode: raise RuntimeError('Isolated n8n CLI failed at '+args[0])
         process=None
         try:
@@ -71,16 +78,18 @@ def main():
             url=f'http://127.0.0.1:{port}/form/ops-pilot-freelance-control'
             with sync_playwright() as p:
                 browser=p.chromium.launch(headless=True)
-                context=browser.new_context(http_credentials=dict(username=user,password=password))
+                context=browser.new_context(http_credentials=dict(username=user,password=password),extra_http_headers={'Authorization':'Basic '+base64.b64encode((user+':'+password).encode()).decode()})
                 page=context.new_page();page.set_default_timeout(30000)
                 deadline=time.monotonic()+90
+                last_status='no response'
                 while True:
                     try:
                         response=context.request.get(url,timeout=3000)
+                        last_status=str(response.status)
                         if response.status==200:break
                     except Exception: pass
                     if process.poll() is not None or time.monotonic()>deadline:
-                        raise RuntimeError('Isolated n8n form did not become ready')
+                        raise RuntimeError('Isolated n8n form did not become ready; last HTTP status '+last_status)
                     time.sleep(.5)
                 anon=browser.new_context()
                 assert anon.request.get(url).status==401,'Form must require basic authentication'
@@ -138,6 +147,9 @@ def main():
                 process.terminate()
                 try: process.wait(timeout=15)
                 except subprocess.TimeoutExpired:process.kill();process.wait()
+            if process:
+                log.close()
+                (OUT/'runtime.txt').write_text(sanitized((private/'runtime.log').read_text())[-20000:])
             server.shutdown();server.server_close();thread.join()
     print('Real isolated n8n acceptance passed: authenticated forms, nine roles, business records, stale error and ZIP response.')
 
