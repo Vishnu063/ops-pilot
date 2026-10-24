@@ -93,7 +93,10 @@ def main():
                         raise RuntimeError('Isolated n8n form did not become ready; last HTTP status '+last_status)
                     time.sleep(.5)
                 anon=browser.new_context()
-                assert anon.request.get(url).status==401,'Form must require basic authentication'
+                anonymous_response=anon.request.get(url)
+                print('Anonymous form HTTP status:',anonymous_response.status,flush=True)
+                assert anonymous_response.status==401,'Form must require basic authentication'
+
                 anon.close()
                 def submit(values,ending=True):
                     (OUT/'stage.json').write_text(json.dumps(dict(task=values.get('Task'),decision=values.get('Decision')),indent=2))
