@@ -56,11 +56,16 @@ node('Manager · route owner request','switch',{'rules':{'values':values},'optio
 link('Freelance control centre','Manager · route owner request')
 intake=http('Import owner-provided listing',[560,0],"{ action:'import', data:{ title:$json['Project title'], description:$json.Requirements, platform:$json.Source || 'manual', url:$json['Listing URL'] || '', budget:String($json.Budget || '0'), currency:$json.Currency || 'USD' } }")
 link('Manager · route owner request',intake,0)
-last=intake
+resume=node('Can resume planning?','if',{'conditions':{'options':{'typeValidation':'strict','version':2},'conditions':[{'id':'resume-import','leftValue':"={{ $json.job.state !== 'rejected' && !Boolean($json.job.agency && $json.job.agency.closed) }}",'rightValue':True,'operator':{'type':'boolean','operation':'true','singleValue':True}}],'combinator':'and'},'options':{}},[700,-150],2.2)
+link(intake,resume)
+last=resume
 for i,(name,action) in enumerate([('01 · Scout','scout'),('02 · Evaluator','evaluator'),('03 · Manager','manager'),('04 · Client assistant','client'),('05 · Proposal writer','proposal')]):
-    nxt=agent(name,action,[790+230*i,0]);link(last,nxt);last=nxt
+    gate=node('Already completed · '+action,'if',{'conditions':{'options':{'typeValidation':'strict','version':2},'conditions':[{'id':'skip-'+action,'leftValue':'={{ Boolean($json.job.agents.'+action+') }}','rightValue':True,'operator':{'type':'boolean','operation':'true','singleValue':True}}],'combinator':'and'},'options':{}},[790+330*i,-100],2.2)
+    nxt=agent(name,action,[790+330*i,40]);link(last,gate);link(gate,nxt,1)
+    merge=node('Continue · '+action,'noOp',{},[970+330*i,-50]);link(gate,merge,0);link(nxt,merge);last=merge
 end=node('All projects and outputs','form',dict(operation='completion',respondWith='showText',responseText='={{ $json.summary_html }}'),[2210,400])
 link(last,end)
+link(resume,end,1)
 worker=http('06 · DevOps worker',[560,240],"{action:'worker',job_id:$json['Job ID'],revision:Number($json.Revision),data:{image:$json['Application image'],port:Number($json['Internal port'] || 8000),health_path:$json['Health path'] || '/health'} }")
 link('Manager · route owner request',worker,1)
 reviewer=agent('07 · Reviewer','reviewer',[820,240]);link(worker,reviewer);link(reviewer,end)
@@ -72,7 +77,9 @@ node('Delivery requested?','if',{'conditions':{'options':{'caseSensitive':True,'
 # Delivery executes with the workflow credential only after stored owner sign-off.
 http('08 · Delivery assistant',[1080,430],"{action:'delivery',job_id:$json['Job ID'],revision:Number($json.Revision)}")
 link('Manager · route owner request','Delivery requested?',2);link('Delivery requested?','08 · Delivery assistant',0);link('Delivery requested?',owner,1)
-earnings=agent('09 · Earnings tracker','earnings',[1370,480]);link('08 · Delivery assistant',earnings);link(owner,earnings);link(earnings,end)
+earnings=agent('09 · Earnings tracker','earnings',[1370,480])
+closed=node('Terminal project?','if',{'conditions':{'options':{'typeValidation':'strict','version':2},'conditions':[{'id':'terminal','leftValue':"={{ $json.job.state === 'rejected' || Boolean($json.job.agency && $json.job.agency.closed) }}",'rightValue':True,'operator':{'type':'boolean','operation':'true','singleValue':True}}],'combinator':'and'},'options':{}},[1110,600],2.2)
+link('08 · Delivery assistant',earnings);link(owner,closed);link(closed,end,0);link(closed,earnings,1);link(earnings,end)
 board=http('Refresh full board',[560,740],path='/bridge/board');link('Manager · route owner request',board,3);link(board,end)
 download=http('Download reviewed ZIP',[560,980],path="/bridge/package?job_id={{ encodeURIComponent($json['Job ID']) }}",download=True)
 # URL expressions must start with '=' when mixing literal text and expressions.
@@ -91,3 +98,4 @@ workflow=dict(name='Ops Pilot · Freelance Agency · 9 roles',nodes=NODES,connec
               pinData={},tags=[],versionId=str(uuid.uuid5(uuid.NAMESPACE_URL,'ops-pilot-freelance-v1')))
 (ROOT/'n8n/freelance-agency.json').write_text(json.dumps(workflow,indent=2)+'\n')
 print('Generated',len(NODES),'nodes with',len(CONNECTIONS),'connections')
+

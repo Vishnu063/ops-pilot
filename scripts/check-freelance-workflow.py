@@ -26,4 +26,10 @@ for name in ['01 · Scout','02 · Evaluator','03 · Manager','04 · Client assis
  assert name in nodes
 assert 'pinData' in w and not w['pinData']
 assert w['settings']['saveDataSuccessExecution']=='all'  # n8n form completion polls persisted execution status
-print('Workflow structure and credential boundaries passed (23 nodes, 9 roles).')
+print(f'Workflow structure and credential boundaries passed ({len(nodes)} nodes, 9 roles).')
+
+
+assert 'Can resume planning?' in nodes and 'Terminal project?' in nodes
+for action in ['scout','evaluator','manager','client','proposal']:
+ assert 'Already completed · '+action in nodes
+print('Duplicate-import and terminal-decision routing present; real n8n acceptance verifies execution.')

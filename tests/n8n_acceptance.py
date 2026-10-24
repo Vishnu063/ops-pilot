@@ -109,6 +109,10 @@ def main():
                 submit({'Task':'Import listing','Project title':'SYNTHETIC n8n Docker pilot','Requirements':'Docker Compose stateless HTTP','Source':'synthetic','Currency':'USD'})
                 job=ws.state()['jobs'][0]
                 assert len(job['agents'])==5 and job['state']=='proposal_ready'
+                # Repeated intake must not replay already completed roles.
+                revision=job['revision']
+                submit({'Task':'Import listing','Project title':'SYNTHETIC n8n Docker pilot','Requirements':'Docker Compose stateless HTTP','Source':'synthetic','Currency':'USD'})
+                assert ws.get(job['id'])['revision']==revision
                 def decision(action,**extra):
                     nonlocal job
                     submit({'Task':'Owner decision','Decision':action,'Job ID':job['id'],'Revision':job['revision'],'Confirm job ID':job['id'],**extra})
@@ -147,8 +151,18 @@ def main():
                     assert set(z.namelist())==set(job['artifacts'])
                     assert not json.loads(z.read('acceptance.json'))['runtime_verified']
                 assert len(ws.get(job['id'])['agents'])==9
+                primary=job
+                # A rejected decision must complete, rather than fail at the earnings node.
+                submit({'Task':'Import listing','Project title':'SYNTHETIC rejection regression','Requirements':'Docker stateless HTTP','Source':'synthetic','Currency':'USD'})
+                job=next(j for j in ws.state()['jobs'] if j['title']=='SYNTHETIC rejection regression')
+                decision('reject')
+                assert job['state']=='rejected'
+                rejected_revision=job['revision']
+                submit({'Task':'Import listing','Project title':'SYNTHETIC rejection regression','Requirements':'Docker stateless HTTP','Source':'synthetic','Currency':'USD'})
+                assert ws.get(job['id'])['revision']==rejected_revision
+                job=primary
                 (OUT/'result.json').write_text(json.dumps(dict(status='passed',n8n='2.44.6',authenticated_form=True,
-                    roles=9,owner_decisions=True,business_records=True,business_tools=True,stale_refused=True,zip_response=True,
+                    roles=9,owner_decisions=True,business_records=True,business_tools=True,duplicate_import=True,rejected_decision=True,stale_refused=True,zip_response=True,
                     synthetic_only=True,customer_runtime_verified=False),indent=2)+'\n')
                 browser.close()
         finally:
@@ -172,3 +186,4 @@ def main():
 
 
 if __name__=='__main__':main()
+

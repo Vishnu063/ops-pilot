@@ -389,13 +389,77 @@
       "retryOnFail": false
     },
     {
+      "id": "7074c9b1-e9da-5a95-a015-b4daa9b72465",
+      "name": "Can resume planning?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        700,
+        -150
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "resume-import",
+              "leftValue": "={{ $json.job.state !== 'rejected' && !Boolean($json.job.agency && $json.job.agency.closed) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "5c747c8f-c064-56ac-abb9-421d932c84ce",
+      "name": "Already completed \u00b7 scout",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        790,
+        -100
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "skip-scout",
+              "leftValue": "={{ Boolean($json.job.agents.scout) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
       "id": "f88755ed-d1ab-5b64-9b19-ac1423165d65",
       "name": "01 \u00b7 Scout",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
         790,
-        0
+        40
       ],
       "parameters": {
         "method": "POST",
@@ -418,13 +482,56 @@
       "retryOnFail": false
     },
     {
+      "id": "ef4c3897-4dd5-593c-b1b7-b68746645ba8",
+      "name": "Continue \u00b7 scout",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        970,
+        -50
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "b771086a-cc26-5d79-805b-37d357dc2747",
+      "name": "Already completed \u00b7 evaluator",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        -100
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "skip-evaluator",
+              "leftValue": "={{ Boolean($json.job.agents.evaluator) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
       "id": "1c9d8582-558a-52b4-ac2e-3629a0af6a49",
       "name": "02 \u00b7 Evaluator",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1020,
-        0
+        1120,
+        40
       ],
       "parameters": {
         "method": "POST",
@@ -447,13 +554,56 @@
       "retryOnFail": false
     },
     {
+      "id": "6f0ec391-690f-573c-86b6-80613d756f92",
+      "name": "Continue \u00b7 evaluator",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1300,
+        -50
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "553afa05-a49c-597a-a4e9-fcba69f543d2",
+      "name": "Already completed \u00b7 manager",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1450,
+        -100
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "skip-manager",
+              "leftValue": "={{ Boolean($json.job.agents.manager) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
       "id": "6347ed58-f962-59ed-8249-a2c8013f4057",
       "name": "03 \u00b7 Manager",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1250,
-        0
+        1450,
+        40
       ],
       "parameters": {
         "method": "POST",
@@ -476,13 +626,56 @@
       "retryOnFail": false
     },
     {
+      "id": "41c22a9d-4e08-5799-8c24-d6a9d0c7d518",
+      "name": "Continue \u00b7 manager",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1630,
+        -50
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "018452c5-0ad5-5215-967c-c416a8aacc9b",
+      "name": "Already completed \u00b7 client",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1780,
+        -100
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "skip-client",
+              "leftValue": "={{ Boolean($json.job.agents.client) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
       "id": "2ddee14e-2deb-572f-abc6-5b95a937d7f4",
       "name": "04 \u00b7 Client assistant",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1480,
-        0
+        1780,
+        40
       ],
       "parameters": {
         "method": "POST",
@@ -505,13 +698,56 @@
       "retryOnFail": false
     },
     {
+      "id": "7d7bc437-3d65-5ea3-b6d0-64c82f42a6f8",
+      "name": "Continue \u00b7 client",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1960,
+        -50
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "1a026d65-cb83-5dd3-ba36-c4a03ae09eee",
+      "name": "Already completed \u00b7 proposal",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2110,
+        -100
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "skip-proposal",
+              "leftValue": "={{ Boolean($json.job.agents.proposal) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
       "id": "f6d3f2fd-6833-59d9-b7e1-b21dd03a2ece",
       "name": "05 \u00b7 Proposal writer",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1710,
-        0
+        2110,
+        40
       ],
       "parameters": {
         "method": "POST",
@@ -532,6 +768,17 @@
         }
       },
       "retryOnFail": false
+    },
+    {
+      "id": "3258a88a-27b3-538b-8aa0-d7f9aa95e084",
+      "name": "Continue \u00b7 proposal",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2290,
+        -50
+      ],
+      "parameters": {}
     },
     {
       "id": "65bba9bc-3888-5181-b1a4-bff23b6dd66d",
@@ -725,6 +972,38 @@
         }
       },
       "retryOnFail": false
+    },
+    {
+      "id": "1b6af04f-675e-53ec-8370-02d5e831497a",
+      "name": "Terminal project?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1110,
+        600
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "terminal",
+              "leftValue": "={{ $json.job.state === 'rejected' || Boolean($json.job.agency && $json.job.agency.closed) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
     },
     {
       "id": "c5f29bd9-2df7-5837-a6b4-f251604d2ada",
@@ -937,6 +1216,42 @@
       "main": [
         [
           {
+            "node": "Can resume planning?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Can resume planning?": {
+      "main": [
+        [
+          {
+            "node": "Already completed \u00b7 scout",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "All projects and outputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Already completed \u00b7 scout": {
+      "main": [
+        [
+          {
+            "node": "Continue \u00b7 scout",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
             "node": "01 \u00b7 Scout",
             "type": "main",
             "index": 0
@@ -946,6 +1261,35 @@
     },
     "01 \u00b7 Scout": {
       "main": [
+        [
+          {
+            "node": "Continue \u00b7 scout",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Continue \u00b7 scout": {
+      "main": [
+        [
+          {
+            "node": "Already completed \u00b7 evaluator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Already completed \u00b7 evaluator": {
+      "main": [
+        [
+          {
+            "node": "Continue \u00b7 evaluator",
+            "type": "main",
+            "index": 0
+          }
+        ],
         [
           {
             "node": "02 \u00b7 Evaluator",
@@ -959,6 +1303,35 @@
       "main": [
         [
           {
+            "node": "Continue \u00b7 evaluator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Continue \u00b7 evaluator": {
+      "main": [
+        [
+          {
+            "node": "Already completed \u00b7 manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Already completed \u00b7 manager": {
+      "main": [
+        [
+          {
+            "node": "Continue \u00b7 manager",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
             "node": "03 \u00b7 Manager",
             "type": "main",
             "index": 0
@@ -968,6 +1341,35 @@
     },
     "03 \u00b7 Manager": {
       "main": [
+        [
+          {
+            "node": "Continue \u00b7 manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Continue \u00b7 manager": {
+      "main": [
+        [
+          {
+            "node": "Already completed \u00b7 client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Already completed \u00b7 client": {
+      "main": [
+        [
+          {
+            "node": "Continue \u00b7 client",
+            "type": "main",
+            "index": 0
+          }
+        ],
         [
           {
             "node": "04 \u00b7 Client assistant",
@@ -981,6 +1383,35 @@
       "main": [
         [
           {
+            "node": "Continue \u00b7 client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Continue \u00b7 client": {
+      "main": [
+        [
+          {
+            "node": "Already completed \u00b7 proposal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Already completed \u00b7 proposal": {
+      "main": [
+        [
+          {
+            "node": "Continue \u00b7 proposal",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
             "node": "05 \u00b7 Proposal writer",
             "type": "main",
             "index": 0
@@ -989,6 +1420,17 @@
       ]
     },
     "05 \u00b7 Proposal writer": {
+      "main": [
+        [
+          {
+            "node": "Continue \u00b7 proposal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Continue \u00b7 proposal": {
       "main": [
         [
           {
@@ -1052,6 +1494,24 @@
     },
     "Owner decision \u00b7 explicit review": {
       "main": [
+        [
+          {
+            "node": "Terminal project?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Terminal project?": {
+      "main": [
+        [
+          {
+            "node": "All projects and outputs",
+            "type": "main",
+            "index": 0
+          }
+        ],
         [
           {
             "node": "09 \u00b7 Earnings tracker",

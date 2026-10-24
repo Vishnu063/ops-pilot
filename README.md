@@ -481,7 +481,7 @@ has no subscription fee. No production changes have been made by building this r
 
 The continuation adds owner-only `quote`, `intake_check` and `draft_message` actions through the studio and n8n Owner decision form. They calculate an estimate, flag missing/unsupported requirements and expired access references, and save unsent client drafts. They grant no customer deployment permission and create no payment. See the [operating examples](docs/AGENCY-OPERATIONS.md#saved-estimates-intake-inspection-and-client-drafts) and [current validation](docs/AGENCY-VALIDATION.md).
 
-All seven CI jobs passed for the current implementation, including quote/intake/draft browser and n8n paths, real generated-bundle Docker, and authenticated n8n form-to-ZIP acceptance: [verified run](https://github.com/Vishnu063/ops-pilot/actions/runs/40052690755). The roadmap records 35 verified repository/synthetic steps and 15 prepared/documented steps; real customer actions remain pending.
+All seven CI jobs passed for the agency implementation before the routing regression continuation, including quote/intake/draft browser and n8n paths, real generated-bundle Docker, and authenticated n8n form-to-ZIP acceptance: [verified run](https://github.com/Vishnu063/ops-pilot/actions/runs/40052690755). The roadmap records 35 verified repository/synthetic steps and 15 prepared/documented steps; real customer actions remain pending.
 
 The existing monitor and nine-role freelance studio now include owner-maintained requirements, tasks/dependencies, scope-change records, invoices, expenses, time/labor, validation references, customer acceptance and offboarding. Finances stay separated by project/currency. Records are assertions, not independently verified consent or money.
 
@@ -498,3 +498,6 @@ Private SQLite backup/verification/fresh-destination restoration includes stored
 Use the existing [studio setup guide](docs/FREELANCE.md), then open Project operations for owner records and lab controls. The n8n Owner decision form also accepts business record types through Record JSON. Neither interface sends customer messages. The screenshot below is a reviewed synthetic agency example from Linux browser acceptance. It shows no customer work or earnings. Existing architecture remains loopback Ops Pilot + SQLite as authoritative state, optional n8n as orchestration, and the pinned triage engine for original monitoring. No additional orchestration framework is required.
 
 ![Synthetic agency studio with owner business records](docs/images/agency-studio.png)
+
+
+The n8n intake now resumes existing projects without replaying completed planning roles. Rejected/closed projects return the board; terminal owner decisions finish without invoking another agent. See [routing validation](docs/AGENCY-VALIDATION.md#routing-regression-continuation-2026-10-24-utc) for current evidence.
