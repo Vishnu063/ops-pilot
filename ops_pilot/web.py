@@ -17,6 +17,10 @@ class Server(ThreadingHTTPServer):
         self.token = secrets.token_urlsafe(32)
         self.bridge_keys = {role: os.environ.get(key, '') for role, key in
                             [('worker', 'OPS_PILOT_WORKFLOW_TOKEN'), ('owner', 'OPS_PILOT_OWNER_TOKEN')]}
+        if eventhub is not None:
+            source_keys={key for key in [*eventhub.keys.values(),eventhub.read_key] if key}
+            if source_keys.intersection(key for key in self.bridge_keys.values() if key):
+                raise ValueError('Ecosystem source/read keys must differ from agency owner/workflow keys')
         if any(value and len(value) < 32 for value in self.bridge_keys.values()):
             raise ValueError('Bridge tokens must contain at least 32 characters')
         if self.bridge_keys['worker'] and self.bridge_keys['worker'] == self.bridge_keys['owner']:

@@ -45,3 +45,11 @@ class HealthGraceTests(unittest.TestCase):
   self.assertEqual(5,health['attempts']);self.assertEqual(2,health['successes'])
   for bad in [{'health_attempts':100},{'health_interval':30},{'health_attempts':True}]:
    with self.assertRaises(ValueError):validate({**base,**bad})
+
+class CrossRoleCredentialTests(unittest.TestCase):
+ def test_source_key_cannot_also_be_an_agency_owner_credential(self):
+  from unittest.mock import patch
+  from ops_pilot.web import Server
+  hub=SimpleNamespace(keys={'cloudlaunch':'s'*40},read_key='r'*40)
+  with patch.dict('os.environ',{'OPS_PILOT_OWNER_TOKEN':'s'*40}):
+   with self.assertRaises(ValueError):Server(None,0,eventhub=hub)
