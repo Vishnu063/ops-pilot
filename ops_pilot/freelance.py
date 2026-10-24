@@ -196,7 +196,14 @@ class Workspace:
             if job.get('lab',{}).get('status') == 'running':
                 raise ValueError('Lab is running or interrupted; inspect and recover it before editing')
             if job.get('agency', {}).get('closed'):
+                if action == 'earnings':
+                    return dict(job=job,summary_html=self.summary())
                 raise ValueError('Closed projects are read-only')
+            if action == 'close':
+                invoiced = sum(i['amount_cents'] for i in job.get('agency',{}).get('invoices',[]))
+                received = db.execute('SELECT COALESCE(SUM(gross),0) FROM payments WHERE job=?',(job['id'],)).fetchone()[0]
+                if invoiced > received:
+                    raise ValueError('Keep the project open until its invoice balance is settled')
             if action == 'advice':
                 from .advisor import Advisor
                 advice = Advisor(self).advise(agency.checked(data, ('prompt','model'), ('prompt','model'))['prompt'],data['model'])

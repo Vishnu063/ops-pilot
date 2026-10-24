@@ -70,6 +70,17 @@ class AgencyTests(unittest.TestCase):
         with self.assertRaises(ValueError):self.act('task',dict(id='a',title='a',owner='owner',status='todo',depends_on='b'))
         self.assertTrue(any(e['result'].startswith('refused:') for e in self.ws.state()['audit']))
 
+    def test_close_requires_settled_invoice_and_closed_read_keeps_revision(self):
+        self.build();self.act('reviewer');self.act('sign_off',dict(confirmation=self.job['id']));self.act('delivery')
+        self.act('customer_acceptance',dict(reference='SYNTHETIC-ONLY',limitations='No real customer'))
+        self.act('offboard',dict(revocation_reference='SYNTHETIC-NO-CREDENTIALS',retention_until='2026-11-01',follow_up='Draft only'))
+        self.act('invoice',dict(reference='synthetic-invoice',amount='10.00'))
+        with self.assertRaises(ValueError):self.act('close')
+        self.act('payment',dict(reference='synthetic-receipt',amount='10.00'))
+        self.act('close');revision=self.job['revision'];self.act('earnings')
+        self.assertEqual(revision,self.job['revision'])
+        with self.assertRaises(ValueError):self.act('payment',dict(reference='late',amount='1'))
+
     def test_cross_process_revision_cas(self):
         other = Workspace(self.temp.name)
         payload = dict(action='task',job_id=self.job['id'],revision=self.job['revision'],data=dict(id='x',title='x',owner='x',status='todo'))
