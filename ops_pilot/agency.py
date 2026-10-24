@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 import re
 
 ACTIONS = {'brief', 'task', 'scope_change', 'invoice', 'expense', 'time_entry',
-           'validation', 'customer_acceptance', 'offboard', 'close', 'approve_lab'}
+           'validation', 'customer_acceptance', 'offboard', 'close', 'approve_lab', 'quote', 'intake_check', 'draft_message'}
 
 
 def checked(data, fields, required=()):
@@ -23,7 +23,7 @@ def records(job):
         expenses=[], time_entries=[], validations=[], customer_acceptance={}, offboarding={}, closed=False))
 
 
-def handle(action, job, data):
+def handle(action, job, data, payments=()):
     from .freelance import money, now, Workspace
     a = records(job)
     if a['closed']:
@@ -31,11 +31,26 @@ def handle(action, job, data):
     if action == 'brief':
         if job['state'] not in ('imported', 'evaluated', 'proposal_ready'):
             raise ValueError('Accepted scope is frozen; record a scope change and create a new scoped project')
-        a['brief'] = checked(data, ('client_alias','target','access_reference','access_expires','image','port','health_path',
-            'expected_status','rollback_image','configuration','constraints','scope','agreement_reference','quote',
-            'milestones','revisions','support_hours','support_days','response_expectation','retention_days','deadline'),
-            ('client_alias','target','scope','constraints'))
+        from .agency_tools import BRIEF_FIELDS
+        a['brief'] = checked(data, BRIEF_FIELDS, ('client_alias','target','scope','constraints'))
+        a.pop('intake_check', None)
+        a.pop('quote_estimate', None)
         job['approvals'].clear()
+    elif action == 'quote':
+        from .agency_tools import quote
+        if job['state'] not in ('imported','evaluated','proposal_ready'):
+            raise ValueError('Accepted quotes are frozen; use a separately agreed scope-change project')
+        a['quote_estimate'] = quote(data,job['currency'])
+        job['approvals'].pop('proposal',None)
+    elif action == 'intake_check':
+        from .agency_tools import intake_check
+        if data: raise ValueError('Intake inspection accepts no extra fields')
+        a['intake_check'] = intake_check(a['brief'])
+    elif action == 'draft_message':
+        from .agency_tools import draft_message
+        drafts = a.setdefault('drafts',[])
+        if len(drafts) >= 100: raise ValueError('Project draft limit reached (100)')
+        drafts.append(dict(**draft_message(job,data,summary(job,payments)),time=now()))
     elif action == 'task':
         item = checked(data, ('id','title','owner','due','status','blocker','depends_on'), ('id','title','owner','status'))
         if item['status'] not in ('todo','doing','blocked','done'):

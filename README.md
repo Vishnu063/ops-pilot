@@ -479,7 +479,9 @@ has no subscription fee. No production changes have been made by building this r
 
 ## Agency continuation
 
-All seven implementation CI jobs passed, including real generated-bundle Docker and authenticated n8n form-to-ZIP acceptance: [verified run](https://github.com/Vishnu063/ops-pilot/actions/runs/40047437636). The roadmap has 32 verified repository/synthetic steps and 18 prepared/documented steps; real customer actions remain pending.
+The next continuation adds owner-only `quote`, `intake_check` and `draft_message` actions through the studio and n8n Owner decision form. They calculate an estimate, flag missing/unsupported requirements and expired access references, and save unsent client drafts. They grant no customer deployment permission and create no payment. See the [operating examples](docs/AGENCY-OPERATIONS.md#saved-estimates-intake-inspection-and-client-drafts) and [current validation](docs/AGENCY-VALIDATION.md).
+
+The previous implementation baseline passed all seven CI jobs, including real generated-bundle Docker and authenticated n8n form-to-ZIP acceptance: [verified run](https://github.com/Vishnu063/ops-pilot/actions/runs/40047437636). See the roadmap for the latest continuation status; real customer actions remain pending.
 
 The existing monitor and nine-role freelance studio now include owner-maintained requirements, tasks/dependencies, scope-change records, invoices, expenses, time/labor, validation references, customer acceptance and offboarding. Finances stay separated by project/currency. Records are assertions, not independently verified consent or money.
 

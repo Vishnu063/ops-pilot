@@ -213,7 +213,7 @@ class Workspace:
                     raise ValueError('Job changed during advice; refresh')
                 job['advice'] = advice
             elif action in agency.ACTIONS:
-                agency.handle(action, job, data)
+                agency.handle(action, job, data, payments=db.execute('SELECT gross,fee FROM payments WHERE job=?',(job['id'],)).fetchall())
             elif action in AGENTS:
                 result = self.agent(action, job, data)
                 job['agents'][action] = dict(time=now(), output=result, mode='bounded local automation')
@@ -342,8 +342,10 @@ class Workspace:
                 raise ValueError('Port differs from the agreed requirements')
             if brief.get('health_path') and brief['health_path'] != health:
                 raise ValueError('Readiness path differs from the agreed requirements')
-            if brief.get('configuration') and brief['configuration'].lower() not in ('none','no configuration'):
-                raise ValueError('First worker cannot supply custom application configuration')
+            from .agency_tools import unsupported_configuration
+            unsupported = unsupported_configuration(brief)
+            if unsupported:
+                raise ValueError('; '.join(unsupported))
             files = {
                 'compose.yaml': f'services:\n  app:\n    image: "{image}"\n    restart: "no"\n    mem_limit: 256m\n    cpus: 0.5\n    pids_limit: 100\n    labels:\n      io.ops-pilot.job: {job["id"]}\n    ports:\n      - "127.0.0.1:${{OPS_PILOT_HOST_PORT:-8080}}:{port}"\n    security_opt:\n      - no-new-privileges:true\n    cap_drop:\n      - ALL\n    logging:\n      driver: json-file\n      options:\n        max-size: "10m"\n        max-file: "3"\n',
                 '.env.example': '# Put real secrets in your approved secret store. Never commit them.\n',

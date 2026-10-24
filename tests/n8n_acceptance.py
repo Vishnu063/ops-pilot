@@ -113,6 +113,13 @@ def main():
                     nonlocal job
                     submit({'Task':'Owner decision','Decision':action,'Job ID':job['id'],'Revision':job['revision'],'Confirm job ID':job['id'],**extra})
                     job=ws.get(job['id'])
+                decision('quote',**{'Record JSON':json.dumps(dict(hours='2.00',hourly_rate='40.04',complexity='1.25'))})
+                assert job['agency']['quote_estimate']['total_cents']==10010
+                assert not job['agency']['quote_estimate']['customer_agreed']
+                decision('intake_check',**{'Record JSON':'{}'})
+                assert not job['agency']['intake_check']['ready_for_manual_review']
+                decision('draft_message',**{'Record JSON':json.dumps(dict(kind='requirements'))})
+                assert not job['agency']['drafts'][-1]['sent']
                 decision('approve_proposal');decision('accept');decision('approve_work')
                 submit({'Task':'Generate starter files','Job ID':job['id'],'Revision':job['revision'],'Application image':'example/synthetic:review-required','Internal port':8000,'Health path':'/health'})
                 job=ws.get(job['id']);assert job['state']=='reviewed'
@@ -141,7 +148,7 @@ def main():
                     assert not json.loads(z.read('acceptance.json'))['runtime_verified']
                 assert len(ws.get(job['id'])['agents'])==9
                 (OUT/'result.json').write_text(json.dumps(dict(status='passed',n8n='2.44.6',authenticated_form=True,
-                    roles=9,owner_decisions=True,business_records=True,stale_refused=True,zip_response=True,
+                    roles=9,owner_decisions=True,business_records=True,business_tools=True,stale_refused=True,zip_response=True,
                     synthetic_only=True,customer_runtime_verified=False),indent=2)+'\n')
                 browser.close()
         finally:

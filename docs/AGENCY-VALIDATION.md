@@ -1,6 +1,6 @@
 # Agency continuation validation
 
-**All seven CI jobs passed on implementation commit `782a8aa428d6872e49f83d2924485ec7c321abe9`: [run 40047437636](https://github.com/Vishnu063/ops-pilot/actions/runs/40047437636).** The final follow-up changes only documentation and captured synthetic evidence. Work continues on `feat/freelance-agency-studio` in [PR #4](https://github.com/Vishnu063/ops-pilot/pull/4); main was not updated or merged.
+**Baseline: all seven CI jobs passed on implementation commit `782a8aa428d6872e49f83d2924485ec7c321abe9`: [run 40047437636](https://github.com/Vishnu063/ops-pilot/actions/runs/40047437636).** That result applies to the prior baseline; the new business-assistance continuation is tracked below. Work continues on `feat/freelance-agency-studio` in [PR #4](https://github.com/Vishnu063/ops-pilot/pull/4); main was not updated or merged.
 
 The [50-step roadmap](AGENCY-ROADMAP.md) records **32 verified in repository/synthetic scope and 18 prepared/documented**. This is not a claim that 50 customer actions occurred or that the agency is production-ready.
 
@@ -53,3 +53,9 @@ The local macOS sandbox refused Chromium Mach-port registration, so visual/brows
 The owner's actual n8n/backend instance still needs its private credentials, import/setup and operational acceptance. n8n Form Ending needs saved successful execution status; keep it private and configure pruning (the optional Compose example uses seven days). Back up n8n volumes and encryption key separately.
 
 No real client, signed agreement, verified authorization/access, customer target, reviewed customer delivery, actual acceptance, bank receipt or paid pilot was supplied. Those actions remain pending. No proposals/messages were sent, services publicly exposed, payments collected or customer infrastructure changed. Owner-entered references and synthetic tests cannot establish those facts. Optional model service/weights/license acceptance and later-service workers remain unverified/gated. Deferred repository decisions and unresolved licenses/Strata identity are recorded in [the selective inventory](REPOSITORY-DECISIONS.md).
+
+## Business-assistance continuation
+
+Adds deterministic owner-only quote calculation, requirements/intake inspection and saved requirements/progress/incident/overdue/follow-up drafts. No customer account, infrastructure, messaging or payment service is connected. Six new regression tests passed, including rounding/limits, quote approval invalidation and freeze, expired/unsupported requirements, manual-review-only readiness, per-project balances and owner-only unsent drafts.
+
+Current local full suite: 53 discovered, 49 passed, four Docker cases skipped. Installed CLI/setup smoke, Python/shell/JavaScript syntax and workflow structural/credential checks passed. The synthetic pilot now exercises a 100.10 estimate, complete synthetic intake and all five unsent draft types; those records remain explicitly synthetic. Browser and real n8n acceptance have been extended for all three new actions; their current CI run remains pending. Previous passing CI results do not verify these new code paths.

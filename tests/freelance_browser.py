@@ -31,6 +31,17 @@ with tempfile.TemporaryDirectory() as directory:
             page.get_by_role('button',name='Approve proposal',exact=True).wait_for()
             page.screenshot(path=str(output/'desktop.png'),full_page=True)
             job=workspace.state()['jobs'][0]
+            page.get_by_text('Requirements and business records',exact=True).click()
+            for action,data in [('quote',dict(hours='2.00',hourly_rate='20.00',complexity='1.25',platform_fees='5.00')),('intake_check',{}),('draft_message',dict(kind='requirements'))]:
+                page.locator('#record-action').select_option(action)
+                page.locator('#record-data').fill(json.dumps(data))
+                page.get_by_role('button',name='Save owner record',exact=True).click()
+                expect(page.locator('#message')).to_have_text('Saved: '+action.replace('_',' '))
+            saved=workspace.get(job['id'])['agency']
+            assert saved['quote_estimate']['total_cents']==5500
+            assert not saved['intake_check']['ready_for_manual_review']
+            assert not saved['drafts'][-1]['sent']
+            page.get_by_text('Requirements and business records',exact=True).click()
             page.get_by_role('button',name='Approve proposal',exact=True).click()
             page.get_by_role('button',name='Record client acceptance',exact=True).wait_for()
             page.locator('#confirmation').fill(job['id'])
@@ -64,7 +75,7 @@ with tempfile.TemporaryDirectory() as directory:
             assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), 'Mobile overflow'
             assert not errors,errors
             assert len(workspace.get(job['id'])['agents'])==9
-            (output/'result.json').write_text(json.dumps(dict(status='passed',roles=9,zip_downloaded=True,mobile_overflow=False,page_errors=errors,chromium=browser.version),indent=2))
+            (output/'result.json').write_text(json.dumps(dict(status='passed',roles=9,business_tools=True,zip_downloaded=True,mobile_overflow=False,page_errors=errors,chromium=browser.version),indent=2))
             browser.close()
     finally:
         server.shutdown();server.server_close();thread.join()

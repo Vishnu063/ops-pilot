@@ -86,3 +86,23 @@ Handover: “Attached reviewed artifact version/digest [value], checks [referenc
 See the synthetic pilot evidence for observed local orchestration elapsed time and exact example financial calculations. There is no real profit or client-delivery benchmark. Optional Ollama advice has bounded input/context/output and identical-input caching, requires an explicitly selected already installed model, and has no tools or paid fallback. No running local service was observed during this implementation; no AI quality/cost comparison or RTK savings is claimed. Install/enable nothing automatically.
 
 Enable later services only after a scoped fixture, implementation, independent review, failure/rollback evidence, service-specific acceptance and agreed support policy. A real paid pilot additionally needs a real customer, agreement, authorized access, reviewed customer delivery, actual acceptance, receipt and offboarding. None is supplied by a synthetic run.
+
+## Saved estimates, intake inspection and client drafts
+
+In **Project operations → Requirements and business records**, choose `quote`, `intake_check` or `draft_message`. The n8n **Owner decision** route exposes the same actions; enter their data in **Record JSON**, including `{}` for intake inspection. All three require the owner credential, use current revisions and persist in project history. None sends a message or changes infrastructure.
+
+`quote` requires decimal strings `hours` and `hourly_rate`; optional `complexity` defaults to `1.00`. Optional `hosting`, `tools`, `platform_fees` and `contingency` are fixed estimated currency amounts, not fee percentages. For example, `{"hours":"2.00","hourly_rate":"20.00","complexity":"1.25","platform_fees":"5.00"}` estimates 55.00 in the project's existing currency. Hours are bounded to 0.01–240 and complexity to 0.01–5; labor rounds half-up to cents before adding costs. This stores an estimate without creating an invoice/payment or setting customer agreement. It clears proposal approval, so review/edit the proposal and obtain fresh approval before recording acceptance. Accepted projects refuse requoting; use the existing scope-change/new-project process. Replacing a brief invalidates its saved estimate and intake report; prior versions stay in revision history.
+
+`intake_check` takes `{}` and records missing fields, unsupported assumptions and access-reference expiry. Extend the existing `brief` with these fields:
+
+| Field group | Values / limits |
+| --- | --- |
+| Service context | `client_alias`, `target`, `scope`, `constraints`, `runtime_assumptions`, `environment` |
+| App/readiness | Immutable `image` digest, canonical `port` string (1–65535), simple absolute `health_path`, `expected_status: "200"`, `configuration: "none"` |
+| Suitability declarations | `stateless: "yes"`, `persistent_storage: "no"`, `private_network: "no"` |
+| Authorization references | `access_reference`, future `access_expires` ISO timestamp with explicit timezone, `agreement_reference`; references only, never credentials |
+| Recovery | `rollback_reference` plus `first_deployment: "no"` and previous immutable `rollback_image`; for a first deployment use `first_deployment: "yes"`, leave rollback_image empty and record an explicit initial-deployment recovery reference |
+
+A complete result is **ready for manual review**, with `authorized_to_deploy` and `customer_runtime_verified` always false. It does not verify the target, image trust, agreement or access rights, and expires with the recorded access window. Recheck before customer work. Existing generic starter generation remains usable with incomplete intake and remains explicitly unverified. Explicitly unsupported configuration, HTTP response expectations, persistent storage or private networking are refused by the worker before file generation. No customer deployment worker is enabled.
+
+`draft_message` accepts `kind` (`requirements`, `progress`, `incident`, `overdue`, `follow_up`) and optional owner-supplied `details`. Incident drafts require observations; the text labels them owner-reported and asks for fact review. Requirements drafts list intake blockers. Progress uses owner-recorded tasks and blockers. Overdue drafts use the selected project's balance only, with a reminder that invoice-level payment allocation is manual. Each draft stores its source revision, `sent: false` and `approved_to_send: false`; review facts and obtain separate sending authorization outside this tool. Prepare follow-up drafts before closing because closed project records are read-only. A project holds up to 100 drafts; old versions remain in its private history.

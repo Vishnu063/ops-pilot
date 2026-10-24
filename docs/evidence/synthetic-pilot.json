@@ -2,6 +2,9 @@
   "label": "SYNTHETIC ONLY; no customer, deployment, payment or acceptance occurred",
   "actions": [
     "brief",
+    "quote",
+    "intake_check",
+    "draft_message",
     "task",
     "scout",
     "evaluator",
@@ -13,14 +16,18 @@
     "approve_work",
     "worker",
     "reviewer",
+    "draft_message",
+    "draft_message",
     "validation",
     "sign_off",
     "delivery",
     "invoice",
+    "draft_message",
     "expense",
     "time_entry",
     "payment",
     "earnings",
+    "draft_message",
     "task",
     "customer_acceptance",
     "offboard",
@@ -41,7 +48,10 @@
     "next_action": "Review outstanding records and workflow gates",
     "source": "owner-recorded; not independently verified"
   },
+  "quote_estimate_cents": 10010,
+  "intake_ready_for_manual_review": true,
+  "unsent_drafts": 5,
   "backup_restored": true,
   "customer_runtime_verified": false,
-  "elapsed_seconds": 0.034
+  "elapsed_seconds": 0.056
 }

@@ -154,6 +154,15 @@
                   },
                   {
                     "option": "close"
+                  },
+                  {
+                    "option": "quote"
+                  },
+                  {
+                    "option": "intake_check"
+                  },
+                  {
+                    "option": "draft_message"
                   }
                 ]
               },
