@@ -1,0 +1,47 @@
+{
+  "status": "verified",
+  "lab_id": "ecosystem-lab-d785e0be94",
+  "checks": [
+    "CloudLaunch app deployed with live PostgreSQL readiness",
+    "Authenticated deployment event and duplicate receipt",
+    "Real Prometheus scrape sees healthy CloudLaunch",
+    "Authenticated Grafana provisioned six panels and queried live CloudLaunch health through Prometheus",
+    "Stopped only the labelled disposable application",
+    "Real Prometheus application-down alert firing",
+    "Alertmanager delivered alert; Pilot collected real evidence and Triage diagnosis",
+    "Unapproved repair refused and application remained stopped",
+    "Explicit disposable-lab approval alone did not execute",
+    "Allowlisted restart passed container identity and live HTTP/database verification",
+    "Consumed approval replay refused",
+    "Prometheus alert resolved and Alertmanager resolution received",
+    "Incident report contains evidence, action history, receipts and owner audit",
+    "Grafana datasource sees recovered application"
+  ],
+  "started_at": "2026-10-24T02:33:12.750846+00:00",
+  "release_id": "042822556400a42cdbf55c6be3ceb9ad7892f3368b48f9b55b8a2a7089473ace",
+  "image_id": "sha256:f1da4ed296396d50391c478a635a76ced04c230993b4a7ed87505512351b7450",
+  "docker_stats": "{\"BlockIO\":\"0B / 0B\",\"CPUPerc\":\"0.44%\",\"Container\":\"0eb2a935518dc7cf7f3ed5d2b16756f4771b8a57c374c5e08771d0db4f9ed418\",\"ID\":\"0eb2a935518d\",\"MemPerc\":\"32.42%\",\"MemUsage\":\"62.25MiB / 192MiB\",\"Name\":\"ecosystem-lab-d785e0be94-app-1\",\"NetIO\":\"11.9kB / 12kB\",\"PIDs\":\"6\"}",
+  "monitoring_versions": {
+    "prometheus": "prometheus, version 3.7.0 (branch: HEAD, revision: 09814effe6c3b4fb4c8e98b578f7205d0228f04d)",
+    "alertmanager": "alertmanager, version 0.28.1 (branch: HEAD, revision: b2099eaa2c9ebc25edb26517cb9c732738e93910)"
+  },
+  "process_peak_rss_kib": {
+    "17064": "36576 kB",
+    "17065": "74108 kB",
+    "17216": "253432 kB"
+  },
+  "limitations": [
+    "The runner deploys through Compose; Jenkins execution is established separately by controller build evidence.",
+    "No Kubernetes/Argo CD/Helm/K8sGPT live validation.",
+    "No browser visual acceptance or total 8 GB capacity claim."
+  ],
+  "elapsed_seconds": 48.16,
+  "jenkins_evidence": {
+    "controller_version": "2.528.1",
+    "job_type": "freestyle",
+    "job": "ecosystem-disposable",
+    "build_number": 2,
+    "result": "SUCCESS",
+    "duration_ms": 48295
+  }
+}

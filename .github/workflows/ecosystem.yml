@@ -1,0 +1,57 @@
+name: Disposable ecosystem acceptance
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ecosystem-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  disposable-recovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: ops-pilot
+      - uses: actions/checkout@v4
+        with:
+          repository: Vishnu063/cloudlaunch
+          ref: d7266a91c240b85efb9e98de3beb0553a162732b
+          path: cloudlaunch
+      - uses: actions/checkout@v4
+        with:
+          repository: Vishnu063/devops_platform
+          ref: f42ac2b32a6946f83f112e71c349866a86ba66f5
+          path: devops_platform
+      - uses: actions/checkout@v4
+        with:
+          repository: Vishnu063/devops-troubleshooting-labs
+          ref: 1ffc139923ea610387d458b3093970d053529cbc
+          path: devops-troubleshooting-labs
+      - uses: actions/checkout@v4
+        with:
+          repository: Vishnu063/devops-triage-assistant
+          ref: 3e4d44a57a5aac7a82fd9d827bb96b7d6fc82721
+          path: devops-triage-assistant
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install orchestration and pinned dependency
+        run: |
+          python -m venv ecosystem-venv
+          ecosystem-venv/bin/python -m pip install ./ops-pilot
+          python ops-pilot/scripts/prepare_monitoring_tools.py --tools "$GITHUB_WORKSPACE/ecosystem-tools"
+      - name: Controlled failure, approval and recovery
+        run: |
+          ecosystem-venv/bin/python devops-troubleshooting-labs/integrations/ecosystem_lab.py \
+            --workspace "$GITHUB_WORKSPACE" --tools "$GITHUB_WORKSPACE/ecosystem-tools" \
+            --output "$RUNNER_TEMP/ecosystem-evidence" --allow-disposable-failure
+      - name: Preserve non-secret summary only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ecosystem-summary
+          path: ${{ runner.temp }}/ecosystem-evidence/result.json
+          if-no-files-found: warn
+          retention-days: 14

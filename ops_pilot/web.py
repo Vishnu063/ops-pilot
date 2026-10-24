@@ -4,13 +4,17 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 from pathlib import Path
 import secrets
+import os
 from urllib.parse import parse_qs, urlsplit
 
 
 class Server(ThreadingHTTPServer):
     daemon_threads = True
-    def __init__(self, pilot, port=8767):
+    def __init__(self, pilot, port=8767, ingest_token=None):
         self.pilot = pilot
+        if ingest_token is not None and (len(ingest_token) < 32 or not ingest_token.isascii() or any(c.isspace() for c in ingest_token)):
+            raise ValueError("Ingest token needs at least 32 non-whitespace ASCII characters")
+        self.ingest_token = ingest_token
         self.token = secrets.token_urlsafe(32)
         super().__init__(("127.0.0.1", port), Handler)
         self.origins = {f"http://127.0.0.1:{self.server_port}", f"http://localhost:{self.server_port}"}
@@ -46,9 +50,16 @@ class Handler(BaseHTTPRequestHandler):
         except Exception:
             return False
 
+    def ingest_authenticated(self):
+        expected = self.server.ingest_token
+        supplied = self.headers.get("Authorization", "")
+        return bool(expected and secrets.compare_digest(supplied.encode(), ("Bearer " + expected).encode()))
+
     def do_GET(self):
         if not self.host_allowed():
             return self.send(403, {"error": "Use the loopback URL printed by Ops Pilot"})
+        if self.path == "/metrics" and self.ingest_authenticated():
+            return self.send(200, self.server.pilot.metrics(), "text/plain")
         url = urlsplit(self.path)
         if url.path == "/login":
             supplied = parse_qs(url.query).get("token", [""])[0]
@@ -70,6 +81,22 @@ class Handler(BaseHTTPRequestHandler):
         return self.send(404, {"error": "Not found"})
 
     def do_POST(self):
+        if self.path == "/api/events":
+            if not self.host_allowed() or not self.ingest_authenticated() or self.headers.get("Origin"):
+                return self.send(403, {"error": "Event ingestion requires its own configured bearer token"})
+            try:
+                if self.headers.get("Transfer-Encoding") or self.headers.get("Content-Type", "").split(";")[0] != "application/json":
+                    raise ValueError("Expected JSON")
+                length = int(self.headers.get("Content-Length", "0"))
+                if not 0 < length <= 65536:
+                    return self.send(413, {"error": "Event exceeds 64 KiB"})
+                self.connection.settimeout(5)
+                payload = json.loads(self.rfile.read(length))
+                return self.send(200, self.server.pilot.ingest(payload))
+            except (ValueError, TypeError, KeyError, RecursionError):
+                return self.send(400, {"error": "Invalid event or conflicting event ID"})
+            except (RuntimeError, OSError):
+                return self.send(503, {"error": "Investigation unavailable; retry the same event IDs"})
         if not self.host_allowed() or not self.authenticated() or self.headers.get("Origin") not in self.server.origins:
             return self.send(403, {"error": "Open Ops Pilot locally and use its controls"})
         if self.path != "/api/action":
@@ -95,7 +122,7 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def run(pilot, port):
-    server = Server(pilot, port)
+    server = Server(pilot, port, ingest_token=os.environ.get("OPS_PILOT_INGEST_TOKEN"))
     print(f"Open http://127.0.0.1:{server.server_port}/login?token={server.token}", flush=True)
     print("Single-owner preview. Keep this login link private. Ctrl+C stops monitoring.", flush=True)
     pilot.start()

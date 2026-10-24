@@ -1,0 +1,651 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Vishnu063/ops-pilot/contracts/v1.schema.json",
+  "$defs": {
+    "DeploymentEvent": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "kind": {
+          "const": "DeploymentEvent"
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "correlation_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "service": {
+          "type": "string"
+        },
+        "release_id": {
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "started",
+            "succeeded",
+            "failed",
+            "rollback_started",
+            "rollback_succeeded",
+            "rollback_failed"
+          ]
+        }
+      },
+      "required": [
+        "schema_version",
+        "kind",
+        "id",
+        "source",
+        "timestamp",
+        "correlation_id",
+        "service",
+        "release_id",
+        "status"
+      ]
+    },
+    "MonitoringAlert": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "kind": {
+          "const": "MonitoringAlert"
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "correlation_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "service": {
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "firing",
+            "resolved"
+          ]
+        },
+        "alertname": {
+          "type": "string"
+        },
+        "fingerprint": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "kind",
+        "id",
+        "source",
+        "timestamp",
+        "correlation_id",
+        "service",
+        "status",
+        "alertname",
+        "fingerprint"
+      ]
+    },
+    "Incident": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "kind": {
+          "const": "Incident"
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "correlation_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "service": {
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "open",
+            "investigating",
+            "awaiting_approval",
+            "verifying",
+            "verified",
+            "failed",
+            "inconclusive"
+          ]
+        },
+        "evidence_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "schema_version",
+        "kind",
+        "id",
+        "source",
+        "timestamp",
+        "correlation_id",
+        "service",
+        "status",
+        "evidence_refs"
+      ]
+    },
+    "Evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "kind": {
+          "const": "Evidence"
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "correlation_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "incident_id": {
+          "type": "string"
+        },
+        "observation": {},
+        "scope": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "kind",
+        "id",
+        "source",
+        "timestamp",
+        "correlation_id",
+        "incident_id",
+        "observation",
+        "scope"
+      ]
+    },
+    "Diagnosis": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "kind": {
+          "const": "Diagnosis"
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "correlation_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "incident_id": {
+          "type": "string"
+        },
+        "evidence": {
+          "type": "array"
+        },
+        "hypotheses": {
+          "type": "array"
+        },
+        "uncertainty": {
+          "type": "string"
+        },
+        "ai_enabled": {
+          "type": "boolean"
+        },
+        "suggested_commands": {
+          "type": "array"
+        },
+        "scope": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "kind",
+        "id",
+        "source",
+        "timestamp",
+        "correlation_id",
+        "incident_id",
+        "evidence",
+        "hypotheses",
+        "uncertainty",
+        "ai_enabled",
+        "suggested_commands",
+        "scope"
+      ]
+    },
+    "RemediationProposal": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "kind": {
+          "const": "RemediationProposal"
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "correlation_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "incident_id": {
+          "type": "string"
+        },
+        "action": {
+          "type": "string"
+        },
+        "parameters": {
+          "type": "object"
+        },
+        "risk": {
+          "type": "string"
+        },
+        "expected_impact": {
+          "type": "string"
+        },
+        "rollback_strategy": {
+          "type": "string"
+        },
+        "verification_criteria": {
+          "type": "object"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "schema_version",
+        "kind",
+        "id",
+        "source",
+        "timestamp",
+        "correlation_id",
+        "incident_id",
+        "action",
+        "parameters",
+        "risk",
+        "expected_impact",
+        "rollback_strategy",
+        "verification_criteria",
+        "expires_at"
+      ]
+    },
+    "ApprovalDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "kind": {
+          "const": "ApprovalDecision"
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "correlation_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "incident_id": {
+          "type": "string"
+        },
+        "proposal_id": {
+          "type": "string"
+        },
+        "actor": {
+          "type": "string"
+        },
+        "decision": {
+          "enum": [
+            "approved",
+            "rejected"
+          ]
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "schema_version",
+        "kind",
+        "id",
+        "source",
+        "timestamp",
+        "correlation_id",
+        "incident_id",
+        "proposal_id",
+        "actor",
+        "decision",
+        "expires_at"
+      ]
+    },
+    "ExecutionResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "kind": {
+          "const": "ExecutionResult"
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "correlation_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "incident_id": {
+          "type": "string"
+        },
+        "proposal_id": {
+          "type": "string"
+        },
+        "actor": {
+          "type": "string"
+        },
+        "action": {
+          "type": "string"
+        },
+        "parameters": {
+          "type": "object"
+        },
+        "status": {
+          "enum": [
+            "executed",
+            "refused",
+            "failed",
+            "unknown"
+          ]
+        },
+        "error": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "schema_version",
+        "kind",
+        "id",
+        "source",
+        "timestamp",
+        "correlation_id",
+        "incident_id",
+        "proposal_id",
+        "actor",
+        "action",
+        "parameters",
+        "status",
+        "error"
+      ]
+    },
+    "VerificationResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "kind": {
+          "const": "VerificationResult"
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "correlation_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "incident_id": {
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "verified",
+            "failed",
+            "inconclusive"
+          ]
+        },
+        "criteria": {
+          "type": "object"
+        },
+        "observations": {
+          "type": "array"
+        },
+        "recovery_seconds": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "schema_version",
+        "kind",
+        "id",
+        "source",
+        "timestamp",
+        "correlation_id",
+        "incident_id",
+        "status",
+        "criteria",
+        "observations",
+        "recovery_seconds"
+      ]
+    },
+    "IncidentReport": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "kind": {
+          "const": "IncidentReport"
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "correlation_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "incident_id": {
+          "type": "string"
+        },
+        "timeline": {
+          "type": "array"
+        },
+        "evidence": {
+          "type": "array"
+        },
+        "actions": {
+          "type": "array"
+        },
+        "verification": {
+          "type": "object"
+        },
+        "unresolved_issues": {
+          "type": "array"
+        }
+      },
+      "required": [
+        "schema_version",
+        "kind",
+        "id",
+        "source",
+        "timestamp",
+        "correlation_id",
+        "incident_id",
+        "timeline",
+        "evidence",
+        "actions",
+        "verification",
+        "unresolved_issues"
+      ]
+    }
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/DeploymentEvent"
+    },
+    {
+      "$ref": "#/$defs/MonitoringAlert"
+    },
+    {
+      "$ref": "#/$defs/Incident"
+    },
+    {
+      "$ref": "#/$defs/Evidence"
+    },
+    {
+      "$ref": "#/$defs/Diagnosis"
+    },
+    {
+      "$ref": "#/$defs/RemediationProposal"
+    },
+    {
+      "$ref": "#/$defs/ApprovalDecision"
+    },
+    {
+      "$ref": "#/$defs/ExecutionResult"
+    },
+    {
+      "$ref": "#/$defs/VerificationResult"
+    },
+    {
+      "$ref": "#/$defs/IncidentReport"
+    }
+  ]
+}

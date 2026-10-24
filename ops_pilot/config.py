@@ -11,7 +11,7 @@ DEFAULT_STATE = Path.home() / ".local/state/ops-pilot"
 
 
 def validate(value):
-    allowed = {"name", "docker_context", "container", "health_url", "interval_seconds", "alert_url"}
+    allowed = {"name", "docker_context", "container", "health_url", "interval_seconds", "alert_url", "verification_timeout_seconds"}
     if not isinstance(value, dict) or set(value) - allowed:
         raise ValueError("Use only name, docker_context, container, health_url, interval_seconds and optional alert_url")
     for key in ("name", "docker_context", "container", "health_url"):
@@ -24,7 +24,10 @@ def validate(value):
     interval = value.get("interval_seconds", 30)
     if type(interval) is not int or not 15 <= interval <= 3600:
         raise ValueError("interval_seconds must be an integer between 15 and 3600")
-    health = {"url": value["health_url"], "attempts": 3, "successes": 2, "timeout": 3, "interval": 1}
+    recovery = value.get("verification_timeout_seconds", 30)
+    if type(recovery) is not int or not 1 <= recovery <= 60:
+        raise ValueError("verification_timeout_seconds must be an integer between 1 and 60")
+    health = {"recovery_timeout_seconds": recovery, "url": value["health_url"], "attempts": 3, "successes": 2, "timeout": 3, "interval": 1}
     validate_health(health)
     if "alert_url" in value:
         url = value["alert_url"]

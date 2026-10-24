@@ -6,9 +6,12 @@ from triage.experience import ExperienceEngine
 from triage.health import check_health
 from triage.integrations import ToolAdapter
 from triage.tool_engine import ToolEngine
+from triage.ecosystem import diagnosis as structured_diagnosis
 from .config import validate
 from .runtime import Runtime
 from .alerts import deliver
+from .events import EventStore, normalize
+from .contracts import project as contract_records
 
 
 class DockerAdapter(ToolAdapter):
@@ -83,6 +86,7 @@ class Pilot:
         adapter = DockerAdapter({"context": self.config["docker_context"], "resource": self.config["container"]})
         self.engine = engine or ExperienceEngine(ToolEngine(adapter, state_dir), self.health)
         self.runtime = Runtime(state_dir, self.config)
+        self.events = EventStore(self.runtime)
         stored = self.runtime.load()
         self.maintenance_until = stored.get("maintenance_until", 0)
         self.ai_model = ai_model
@@ -145,10 +149,14 @@ class Pilot:
         state = self.state()
         if state.get("busy"):
             raise ValueError("Wait for the current operation before exporting")
+        incident_id = (state.get("plan") or {}).get("incident_id") or (state.get("report") or {}).get("incident_id")
+        state["incident_timeline"] = [row for row in self.engine.store.timeline(incident_id) if row["target"] == self.engine.adapter.target] if incident_id else []
         return {"schema_version": 1, "generated_at": time.time(),
                 "scope": "One configured Docker app; filtered evidence, not a root-cause guarantee.",
+                "structured_diagnosis": structured_diagnosis(state["report"]) if state["report"] else None,
+                "contract_records": contract_records(state),
                 **{k: state[k] for k in ("name", "container", "context", "health_url", "monitor",
-                   "maintenance_until", "diagnosis", "report", "plan", "result", "history", "alerts")}}
+                   "maintenance_until", "diagnosis", "report", "plan", "result", "history", "alerts", "incoming_events", "event_audit", "incident_timeline")}}
 
     def _investigate(self):
         self.report = self.engine.scan(deep=True)
@@ -194,6 +202,53 @@ class Pilot:
             self.monitor["busy"] = False
             self.lock.release()
 
+    def ingest(self, payload):
+        events = normalize(payload, self.config["container"])
+        if not self.lock.acquire(blocking=False):
+            raise RuntimeError("Pilot is busy; retry the same event ID")
+        try:
+            receipts = self.events.receive(events)
+            # Persist before collection. A retry can finish incomplete investigation;
+            # successful receipt alone never claims diagnosis or recovery.
+            for receipt, event in zip(receipts, events):
+                if receipt["incident_id"] is None:
+                    related = self.events.related_incident(event)
+                    if related:
+                        self.events.link([receipt["id"]], related)
+                        receipt["incident_id"] = related
+            pending = [r for r in receipts if r["incident_id"] is None]
+            failures = {e["id"] for e in events if e["status"] in {"firing", "failed", "rollback_failed"}}
+            investigate = [r["id"] for r in pending if r["id"] in failures]
+            if investigate and self.maintenance_until <= time.time():
+                report = self._investigate()
+                incident = report["incident_id"]
+                self.events.link(investigate, incident)
+                for receipt in receipts:
+                    if receipt["id"] in investigate:
+                        receipt["incident_id"] = incident
+            # Incoming messages cannot plan, approve, execute or mark health recovered.
+            return {"receipts": receipts, "repair_executed": False}
+        finally:
+            self.lock.release()
+
+    def metrics(self):
+        with self.runtime.connect() as db:
+            counts = db.execute('SELECT COUNT(*), COUNT(DISTINCT incident) FROM incoming_events WHERE target=?', (self.runtime.key,)).fetchone()
+            deployment_counts = {status: count for status, count in db.execute(
+                "SELECT json_extract(payload,'$.status'),COUNT(*) FROM incoming_events WHERE target=? AND json_extract(payload,'$.kind')='DeploymentEvent' GROUP BY json_extract(payload,'$.status')", (self.runtime.key,))}
+        deployment_metrics = "# TYPE ops_pilot_deployment_events_total counter\n" + "".join(
+            f'ops_pilot_deployment_events_total{{status="{status}"}} {deployment_counts.get(status, 0)}\n'
+            for status in ("started", "succeeded", "failed", "rollback_started", "rollback_succeeded", "rollback_failed"))
+        health = self.monitor["healthy"]
+        return (deployment_metrics + "# TYPE ops_pilot_endpoint_healthy gauge\n"
+                + f"ops_pilot_endpoint_healthy {1 if health is True else 0}\n"
+                + "# TYPE ops_pilot_endpoint_known gauge\n"
+                + f"ops_pilot_endpoint_known {0 if health is None else 1}\n"
+                + "# TYPE ops_pilot_events_total counter\n"
+                + f"ops_pilot_events_total {counts[0]}\n"
+                + "# TYPE ops_pilot_investigated_incidents_total counter\n"
+                + f"ops_pilot_investigated_incidents_total {counts[1]}\n")
+
     def start(self):
         if self.thread and self.thread.is_alive():
             return
@@ -219,12 +274,22 @@ class Pilot:
                 "context": self.config["docker_context"], "health_url": self.config["health_url"],
                 "busy": False, "maintenance_until": self.maintenance_until,
                 "diagnosis": self.diagnosis(), "alerts": self.runtime.alerts(),
+                "incoming_events": self.events.history(), "event_audit": self.events.audit(),
                 "alert_delivery_enabled": bool(self.config.get("alert_url")), "monitor": self.monitor, "report": self.report, "plan": plan, "result": self.result,
                 "ai_model": self.ai_model, "explanation": self.explanation, "history": self.engine.history()[:30]})
         finally:
             self.lock.release()
 
     def action(self, name, plan_id=None):
+        try:
+            result = self._action(name, plan_id)
+        except (ValueError, RuntimeError, OSError):
+            self.events.record_action(name, plan_id, "refused_or_failed")
+            raise
+        self.events.record_action(name, plan_id or self.plan_id, "completed")
+        return result
+
+    def _action(self, name, plan_id=None):
         if not self.lock.acquire(blocking=False):
             raise ValueError("A check or repair is running. Wait for it to finish.")
         try:

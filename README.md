@@ -1,5 +1,11 @@
 # Ops Pilot
 
+## Optional ecosystem integration
+
+Authenticated deployment/Alertmanager intake now reuses the existing Triage workflow. Receipts are durable and deduplicated; incoming events cannot authorize repairs. A real disposable CloudLaunch/PostgreSQL outage passed through Prometheus, Jenkins, approval and recovery verification. This is still a single-owner local preview.
+
+[Architecture, configuration, test evidence and known limits](docs/ecosystem/INTEGRATION.md).
+
 [![Validate Ops Pilot](https://github.com/Vishnu063/ops-pilot/actions/workflows/checks.yml/badge.svg)](https://github.com/Vishnu063/ops-pilot/actions/workflows/checks.yml)
 
 **Know what failed. Review a repair. Check that your application responds again.**
@@ -348,7 +354,7 @@ The report is not a root-cause guarantee or a complete compliance audit export.
 ## What we reused
 
 Ops Pilot depends on [DevOps Triage Assistant](https://github.com/Vishnu063/devops-triage-assistant)
-at immutable commit `e4b51f28bb3dcd8395ab5fbfe93d946f19156031`.
+at immutable commit `3e4d44a57a5aac7a82fd9d827bb96b7d6fc82721`.
 It reuses the Docker collector, filtered evidence, persistent approval engine,
 incident history and endpoint verification instead of copying or rebuilding them.
 Ops Pilot adds a focused monitor, dashboard, config wizard, and stronger
@@ -414,7 +420,7 @@ bash start.sh --update
 `check` exits 0 for no supported findings, 1 for findings, 2 for setup/collection
 failure. It is a bounded diagnostic result, not a universal health certification.
 Monitoring runs only while the foreground process or optional systemd service
-runs. No email delivery or incoming webhook receiver is installed. Outgoing
+runs. No email delivery is installed. Optional authenticated incoming integration webhooks are described in the ecosystem guide. Outgoing
 webhook alerts require explicit configuration below.
 
 ## Test before using on customer systems

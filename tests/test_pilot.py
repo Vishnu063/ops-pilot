@@ -65,7 +65,7 @@ class PilotTests(unittest.TestCase):
         ProbeHandler.status = 200
         self.config = dict(CONFIG, health_url=f"http://127.0.0.1:{self.http.server_port}/health")
         _, health = validate(self.config)
-        health.update(interval=0)
+        health.update(interval=0, recovery_timeout_seconds=1)
         core = ToolEngine(self.adapter, self.temp.name)
         self.engine = ExperienceEngine(core, health)
         self.pilot = Pilot(self.config, self.temp.name, engine=self.engine, probe=lambda _: {"healthy": False})

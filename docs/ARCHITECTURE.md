@@ -27,7 +27,7 @@ button overrides this latch.
 
 Health is two consecutive HTTP 200 probes out of three, with three-second request
 timeouts and one-second intervals. Redirects are rejected. This can reject a slow
-startup and does not test business transactions. HTTP and Docker may fail for
+startup and does not test business transactions. Post-repair verification now permits a bounded 30-second readiness window (configurable 1–60 seconds), while keeping one repair attempt; see docs/ecosystem/INTEGRATION.md. HTTP and Docker may fail for
 different reasons; the UI keeps evidence and hypotheses separate.
 
 Optional upstream AI receives only filtered codes/metrics/signature counts and
