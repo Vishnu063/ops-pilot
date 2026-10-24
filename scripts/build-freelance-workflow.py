@@ -45,7 +45,7 @@ fields=[dropdown('Task',['View board','Import listing','Generate starter files',
         field('Record JSON','textarea',placeholder='For business records only: JSON object matching the owner desk schema'),field('Edited proposal','textarea'),field('Payment amount'),field('Platform fee'),field('Payment reference')]
 node('Freelance control centre','formTrigger',dict(authentication='basicAuth',formTitle='Ops Pilot · Freelance control centre',
      formDescription='View all nine roles, project outputs and earnings. Choose a task. For View board, other fields can stay empty/default. Import needs title and requirements. Generate needs job ID, revision and image. Owner decisions need current job ID and revision; confirm the ID when requested. No live deployment or client submission.',
-     formFields={'values':fields},responseMode='responseNode',options={}),[0,400],2.2,
+     formFields={'values':fields},responseMode='lastNode',options={}),[0,400],2.2,
      webhookId='ops-pilot-freelance-control',credentials={'httpBasicAuth':{'id':'CONFIGURE_FORM_LOGIN','name':'Ops Pilot Form Login'}})
 values=[]
 for task in ['Import listing','Generate starter files','Owner decision','View board','Download handover']:

@@ -202,7 +202,7 @@
             }
           ]
         },
-        "responseMode": "responseNode",
+        "responseMode": "lastNode",
         "options": {}
       },
       "webhookId": "ops-pilot-freelance-control",

@@ -8,6 +8,7 @@ assert len(nodes)==len(w['nodes'])
 assert not w['active']
 assert len([n for n in nodes.values() if n['type'].endswith('formTrigger')])==1
 assert nodes['Freelance control centre']['parameters']['authentication']=='basicAuth'
+assert nodes['Freelance control centre']['parameters']['responseMode']=='lastNode'
 for source,values in w['connections'].items():
  assert source in nodes
  for port in values['main']:

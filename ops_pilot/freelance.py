@@ -400,6 +400,10 @@ class Workspace:
         for j in state['jobs']:
             details = ''.join(f'<details><summary>{esc(AGENTS[k][0])}</summary><pre>{esc(json.dumps(v["output"], indent=2))}</pre></details>' for k,v in j['agents'].items())
             details += ''.join(f'<details><summary>{esc(k)}</summary><pre>{esc(v)}</pre></details>' for k,v in j['artifacts'].items())
+            details += '<details><summary>Project operations and evidence</summary><pre>'+esc(json.dumps(dict(records=j.get('agency',{}),finances=j['business_summary'],lab=j.get('lab',{})),indent=2))+'</pre></details>'
+            f = j['business_summary']
+            details = f'<p>Outstanding {esc(f["currency"])} {f["outstanding_cents"]/100:.2f} · Cash recorded {f["cash_received_cents"]/100:.2f}</p>'+details
+            details += '<p>'+esc(' · '.join(f['alerts']))+'</p>'
             cards.append(f'<article><h2>{esc(j["title"])}</h2><p><strong>{esc(j["state"])}</strong> · ID {j["id"]} · Revision {j["revision"]}</p>{details}</article>')
         totals = ' · '.join(f'{t["currency"]} {t["net_cents"]/100:.2f} net recorded' for t in state['earnings']) or 'No payments recorded'
         return '<style>body{background:#101522;color:#e7eef9;font:15px system-ui}article{padding:20px;margin:16px 0;background:#1b2435;border:1px solid #344666;border-radius:16px}h1{color:#9bf6d3}summary{cursor:pointer;padding:10px}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px}p{line-height:1.7}</style><h1>Ops Pilot · Freelance desk</h1><p>9 local agent roles · '+str(len(state['jobs']))+' recent jobs · '+esc(totals)+'</p><p>Copy the job ID and current revision into the Control Desk form for the next action. This is a snapshot; submit Board again to refresh.</p>'+(''.join(cards) or '<p>No jobs yet. Use the Intake form to add a listing.</p>')+'<p>Connectors: not configured. Files are starter bundles. No live deployment, client messages or platform submission.</p>'
