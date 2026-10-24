@@ -9,5 +9,9 @@
   "stale_refused": true,
   "zip_response": true,
   "synthetic_only": true,
-  "customer_runtime_verified": false
+  "customer_runtime_verified": false,
+  "duplicate_import": true,
+  "rejected_decision": true,
+  "implementation_commit": "baeb6fbace6d7b5baa1010ad51fa7627117d258f",
+  "ci_run": "https://github.com/Vishnu063/ops-pilot/actions/runs/40059875230"
 }
