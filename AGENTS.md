@@ -4,6 +4,13 @@ Work step by step. Reuse existing code, keep changes focused, test real failures
 and never claim success without evidence. Make routine decisions yourself; ask
 only when essential. Do not delegate work unless the user requests it.
 
+The user's `$` marker means these efficiency rules apply: inspect relevant code
+before editing, reuse findings, limit context and output, prefer ordinary code
+for routine work, and run checks appropriate to the change. Do not sacrifice
+correctness or claim measured credit savings without evidence. Verify optional
+tools exist before using them; do not install tools, connect accounts or expand
+scope without authorization. Finish with changes, verification and blockers.
+
 ## Project scope
 
 Ops Pilot 0.2 manages one explicit Docker application for one trusted local owner.

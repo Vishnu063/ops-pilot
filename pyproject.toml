@@ -16,4 +16,4 @@ ops-pilot = "ops_pilot.cli:main"
 include = ["ops_pilot*"]
 
 [tool.setuptools.package-data]
-ops_pilot = ["dashboard.html"]
+ops_pilot = ["dashboard.html", "freelance.html"]

@@ -145,3 +145,14 @@ Documentation added afterward records the observed results.
 This is Chromium viewport acceptance, not testing on a physical Android phone,
 all browser engines, assistive technologies or customer infrastructure. No full
 accessibility audit or live AI inference benchmark is claimed.
+
+
+## Freelance studio
+
+[PR #4](https://github.com/Vishnu063/ops-pilot/pull/4) adds bounded freelance
+roles and the n8n canvas. [Initial CI run](https://github.com/Vishnu063/ops-pilot/actions/runs/40023426878)
+passed Python checks on 3.11/3.12/3.13 and the systemd lab. Its browser job failed
+before running tests because Playwright 1.58.0 does not support the new Ubuntu
+26.04 runner. The browser job is now pinned to Ubuntu 24.04; consult PR checks
+for the subsequent result. The local original and freelance browser flows passed.
+Detailed limits are recorded in [FREELANCE-VALIDATION.md](FREELANCE-VALIDATION.md).
