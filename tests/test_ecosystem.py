@@ -36,3 +36,12 @@ class EventHubTests(unittest.TestCase):
   import sqlite3
   with self.assertRaises(sqlite3.IntegrityError),self.hub.connect() as db:db.execute('DELETE FROM audit')
   report=self.hub.report(ident);self.assertEqual('IncidentReport',report['type']);self.assertTrue(report['data']['timeline']);self.assertTrue(report['data']['unresolved'])
+
+class HealthGraceTests(unittest.TestCase):
+ def test_bounded_startup_grace_keeps_two_success_requirement(self):
+  from ops_pilot.config import validate
+  base=dict(name='owned',docker_context='default',container='owned',health_url='http://127.0.0.1:8080/')
+  _,health=validate({**base,'health_attempts':5,'health_interval':1})
+  self.assertEqual(5,health['attempts']);self.assertEqual(2,health['successes'])
+  for bad in [{'health_attempts':100},{'health_interval':30},{'health_attempts':True}]:
+   with self.assertRaises(ValueError):validate({**base,**bad})

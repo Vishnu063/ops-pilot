@@ -45,7 +45,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: Vishnu063/devops-troubleshooting-labs
-          ref: 9047a9817f792738029c7b4015c3fea29fa23d4f
+          ref: 1c8b192c30cbda515b0f3c5e5b2887602dbadef6
           path: labs
           persist-credentials: false
       - uses: actions/setup-python@v5
