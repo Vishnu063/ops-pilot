@@ -1,0 +1,75 @@
+{
+  "status": "passed",
+  "synthetic": true,
+  "customer_changes": false,
+  "stages": [
+    {
+      "stage": "CloudLaunch sample deployed",
+      "elapsed_seconds": 12.637,
+      "release_id": "8850415c1cea22a49764c8a349932c7b95359324",
+      "image_id": "sha256:80317637e4d1e80d10bf0984acfcef8375c8c7fb78cebea7c758e8d0af316560"
+    },
+    {
+      "stage": "Monitoring observes healthy sample",
+      "elapsed_seconds": 21.101
+    },
+    {
+      "stage": "Owned test application stopped",
+      "elapsed_seconds": 24.236
+    },
+    {
+      "stage": "Prometheus alert received by Ops Pilot",
+      "elapsed_seconds": 28.319,
+      "incident_id": "b672ca567b7c5fb48c2fb2d7"
+    },
+    {
+      "stage": "Real firing alert confirmed",
+      "elapsed_seconds": 28.333
+    },
+    {
+      "stage": "Source/read credentials cannot authorize and failed verification remains failed",
+      "elapsed_seconds": 36.74
+    },
+    {
+      "stage": "Real native Docker evidence and deterministic diagnosis collected",
+      "elapsed_seconds": 40.925
+    },
+    {
+      "stage": "Exact backend restart proposal created",
+      "elapsed_seconds": 41.034
+    },
+    {
+      "stage": "No repair before approval verified",
+      "elapsed_seconds": 41.062
+    },
+    {
+      "stage": "Owner approved exact incident plan",
+      "elapsed_seconds": 41.162
+    },
+    {
+      "stage": "Allowlisted repair executed; container and HTTP verified",
+      "elapsed_seconds": 45.738
+    },
+    {
+      "stage": "HTTP, actual metrics and alert resolution verified",
+      "elapsed_seconds": 48.088,
+      "recovery_seconds": 19.929
+    },
+    {
+      "stage": "Correlated incident report and audit exported",
+      "elapsed_seconds": 48.121
+    },
+    {
+      "stage": "Platform read-only incident view verified",
+      "elapsed_seconds": 48.146
+    }
+  ],
+  "passed_stages": 14,
+  "main_process_peak_rss_kib": 47024,
+  "elapsed_seconds": 48.146,
+  "limits": "No claim that the entire optional stack fits in 8 GB; Grafana/Jenkins/Kind/K8sGPT not started",
+  "cleanup_verified": true,
+  "implementation_commit": "5a76efea3254c4f452e9c9be16e03c97c5de89e8",
+  "ci_run": "https://github.com/Vishnu063/ops-pilot/actions/runs/40075524317",
+  "measurement_note": "Controller peak RSS on Linux; elapsed recorded before final cleanup; recovery includes programmatic owner actions. No customer or full-stack 8 GB capacity claim."
+}

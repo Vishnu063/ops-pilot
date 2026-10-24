@@ -57,3 +57,9 @@ Updated 2026-10-24 (Asia/Kolkata). Status refers to the stated repository scope,
 | 49. Complete a small pilot project. | verified | Fully exercise a clearly labeled synthetic pilot now. A real paid pilot additionally requires a real client, agreement, authorized access, reviewed delivery, actual customer acceptance, payment and offboarding. Do not invent any of those. | 14, 44 | [Evidence](../docs/evidence/synthetic-pilot.json) | Synthetic only. Real client/agreement/access/acceptance/payment/offboarding absent. |
 | 50. Review results and expand carefully. | prepared/documented | Measure delivery time, errors/rework, costs, customer acceptance and real profit when available. Enable CI/CD repairs, troubleshooting and recurring maintenance only after their own evidence-based service gates. | 14, 44 | [Evidence](../docs/AGENCY-OPERATIONS.md) | Expansion stays gated; no real profit/delivery metrics. |
 
+
+## Unified DevOps follow-on (2026-10-24)
+
+The five-project incident integration is optional and preserves the 50-step agency work above. [Completion record](ECOSYSTEM-RESULTS.md) and [repository evidence](evidence/ecosystem-repositories.json) distinguish the verified disposable Docker path from external acceptance gates. Real monitoring, exact owner approval, refused preapproval/replay, native restart, metric/HTTP/resolution checks and cleanup passed. Audit exports are paginated so long histories are not silently omitted.
+
+Next gates remain actual Jenkins/Trivy, customer authorization, cluster/GitOps/Helm/K8sGPT and resource-alert runtime checks, optional Grafana/log backend provisioning, and measurement of the full optional stack on an 8 GB host. These are not complete customer services.

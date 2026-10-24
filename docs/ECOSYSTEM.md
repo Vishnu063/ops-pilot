@@ -71,4 +71,4 @@ Jenkins runtime/Trivy database results, customer targets/accounts, live Kubernet
 
 ## Observed acceptance
 
-The real lightweight path and all nine Ops Pilot jobs passed on `131981b829ef6cb9448702e8d506303db8a56188`. See [the completion record](ECOSYSTEM-RESULTS.md) and [measured result](evidence/ecosystem-acceptance.json). These supersede the earlier implemented-awaiting-verification statement for this specific Docker path. Wider external/cluster/provider gates remain as listed above. No later documentation update is represented as a new customer deployment.
+The real lightweight path and all nine Ops Pilot jobs passed on `5a76efea3254c4f452e9c9be16e03c97c5de89e8`. See [the completion record](ECOSYSTEM-RESULTS.md) and [measured result](evidence/ecosystem-acceptance.json). These supersede the earlier implemented-awaiting-verification statement for this specific Docker path. Wider external/cluster/provider gates remain as listed above. No later documentation update is represented as a new customer deployment.
