@@ -33,7 +33,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: Vishnu063/cloudlaunch
-          ref: a2ea05af26b5484c384bf7fd4a14aac0490f3d5e
+          ref: 8850415c1cea22a49764c8a349932c7b95359324
           path: cloudlaunch
           persist-credentials: false
       - uses: actions/checkout@v4
