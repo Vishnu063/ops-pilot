@@ -167,6 +167,8 @@ class EventHub:
                 plan=self.pilot.action('plan');incident['plan_id']=plan['id']
                 incident['proposal']=envelope('RemediationProposal','ops-pilot',self.service,dict(incident_id=incident['id'],plan_id=plan['id'],
                     action={'operation':'docker.restart','argv':plan['command'],'target':plan['target']},risk=plan.get('risk'),
+                    expires_at=plan.get('expires_at'),expected_impact='Restart only the exact selected container; traffic may be interrupted and underlying faults may persist.',
+                    likely_cause=incident.get('diagnosis',{}).get('data',{}).get('hypotheses',[]),
                     rollback=plan.get('rollback'),verification={'native':plan.get('verification'),'http_policy':self.pilot.health,'monitoring':'Fresh service-scoped Prometheus application probe and authenticated Alertmanager resolution'},evidence_refs=incident['event_ids']),incident['correlation_id'])
                 incident['status']='pending_approval'
             elif action in ('approve','reject'):
@@ -208,6 +210,9 @@ class EventHub:
         unresolved=[] if incident['status']=='verified' else ['Required live recovery/monitoring criteria have not all passed.']
         return envelope('IncidentReport','ops-pilot',self.service,dict(incident_id=ident,timeline=timeline,unresolved=unresolved,incident=incident),incident['correlation_id'])
     def metrics(self):
-        state=self.state();active=sum(i['status'] not in ('verified','rejected') for i in state['incidents']);resolved=sum(i['status']=='verified' for i in state['incidents'])
-        with self.connect() as db:count=db.execute('SELECT COUNT(*) FROM incoming').fetchone()[0]
+        # Board pagination must not undercount aggregate monitoring series.
+        with self.connect() as db:
+            active=db.execute("SELECT COUNT(*) FROM incidents WHERE status NOT IN ('verified','rejected')").fetchone()[0]
+            resolved=db.execute("SELECT COUNT(*) FROM incidents WHERE status='verified'").fetchone()[0]
+            count=db.execute('SELECT COUNT(*) FROM incoming').fetchone()[0]
         return f'# TYPE ops_pilot_events_total counter\nops_pilot_events_total {count}\n# TYPE ops_pilot_incidents_active gauge\nops_pilot_incidents_active {active}\n# TYPE ops_pilot_incidents_verified gauge\nops_pilot_incidents_verified {resolved}\n'

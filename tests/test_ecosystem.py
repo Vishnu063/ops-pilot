@@ -20,6 +20,11 @@ class EventHubTests(unittest.TestCase):
   changed=json.loads(json.dumps(e));changed['data']['alertname']='Changed'
   with self.assertRaises(ValueError):self.hub.ingest(changed,'alertmanager')
   self.pilot.action.assert_not_called()
+ def test_monitoring_counts_all_incidents_beyond_board_pagination(self):
+  for n in range(35):
+   event=self.event();event['data']['fingerprint']='fp-'+str(n);self.hub.ingest(event,'alertmanager')
+  self.assertEqual(30,len(self.hub.state()['incidents']))
+  self.assertIn('ops_pilot_incidents_active 35',self.hub.metrics())
  def test_webhooks_cannot_supply_approval_and_resolved_is_not_recovery(self):
   incident=self.hub.ingest(self.event(),'alertmanager')['incident_id'];self.hub.ingest(self.event('resolved'),'alertmanager')
   self.assertEqual('detected',self.hub.get(incident)['status']);self.assertTrue(self.hub.get(incident)['external_resolved'])
