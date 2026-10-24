@@ -1,5 +1,6 @@
 # Freelance studio and n8n control centre
 
+Current agency additions, all 50 step statuses and subsequent evidence are in [AGENCY-ROADMAP.md](AGENCY-ROADMAP.md), [AGENCY-OPERATIONS.md](AGENCY-OPERATIONS.md) and [AGENCY-VALIDATION.md](AGENCY-VALIDATION.md). The foundation results below retain their original date.
 Ops Pilot now includes a separate, single-owner freelance workspace. Its nine named roles run **bounded local automation**, not nine autonomous language models. Outputs, approvals, artifact contents, payments and revisions persist in a private SQLite database. Existing Docker monitoring and repair rules are preserved.
 
 ![Freelance workspace, synthetic demo](images/freelance-studio.png)

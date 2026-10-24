@@ -60,6 +60,16 @@ class AgencyTests(unittest.TestCase):
             evidence=json.loads(archive.read('EVIDENCE.json'))
             self.assertEqual('failed',evidence['validation_records'][0]['result'])
 
+    def test_revision_history_keeps_edited_scope_and_task_cycles_are_refused(self):
+        self.act('brief',dict(client_alias='a',target='test',scope='first scope',constraints='none'))
+        self.act('brief',dict(client_alias='a',target='test',scope='second scope',constraints='none'))
+        scopes=[j.get('agency',{}).get('brief',{}).get('scope') for j in self.ws.history(self.job['id'])]
+        self.assertIn('first scope',scopes);self.assertIn('second scope',scopes)
+        self.act('task',dict(id='a',title='a',owner='owner',status='todo'))
+        self.act('task',dict(id='b',title='b',owner='owner',status='todo',depends_on='a'))
+        with self.assertRaises(ValueError):self.act('task',dict(id='a',title='a',owner='owner',status='todo',depends_on='b'))
+        self.assertTrue(any(e['result'].startswith('refused:') for e in self.ws.state()['audit']))
+
     def test_cross_process_revision_cas(self):
         other = Workspace(self.temp.name)
         payload = dict(action='task',job_id=self.job['id'],revision=self.job['revision'],data=dict(id='x',title='x',owner='x',status='todo'))
@@ -111,8 +121,13 @@ class AgencyTests(unittest.TestCase):
         with patch.object(Lab,'docker',side_effect=['foreign',json.dumps([{'Config':{'Labels':{}}}])]):
             with self.assertRaises(ValueError): Lab(self.ws).cleanup(self.job)
     def test_expired_approval_blocks_work(self):
-        self.build()
-        self.assertFalse(self.ws.approval_valid(dict(time='2000-01-01T00:00:00+00:00')))
+        for action in ('scout','evaluator','manager','client','proposal','approve_proposal'):self.act(action)
+        self.act('accept',dict(confirmation=self.job['id']));self.act('approve_work',dict(confirmation=self.job['id']))
+        self.job['approvals']['work']['time']='2000-01-01T00:00:00+00:00'
+        with self.ws.connect() as db:
+            db.execute('UPDATE jobs SET payload=? WHERE id=?',(json.dumps(self.job),self.job['id']))
+        with self.assertRaises(ValueError):self.act('worker',dict(image='example/never-started:latest'))
+        self.assertEqual({},self.ws.get(self.job['id'])['artifacts'])
     def test_interrupted_recovery_is_visible_and_does_not_redeploy(self):
         self.build()
         self.job['lab'] = dict(status='running',project='opslab-'+self.job['id']+'-interrupted',digest=self.ws.digest(self.job))

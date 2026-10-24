@@ -90,6 +90,11 @@ class Handler(BaseHTTPRequestHandler):
             return self.send(200, Path(__file__).with_name('freelance.html').read_text(), 'text/html')
         if url.path == '/api/freelance/state' and self.server.workspace is not None:
             return self.send(200, self.server.workspace.state())
+        if url.path == '/api/freelance/history' and self.server.workspace is not None:
+            try:
+                return self.send(200,self.server.workspace.history(parse_qs(url.query).get('job_id',[''])[0]))
+            except ValueError as exc:
+                return self.send(409,{'error':str(exc)})
         if url.path == '/api/freelance/package' and self.server.workspace is not None:
             try:
                 job_id = parse_qs(url.query).get('job_id', [''])[0]

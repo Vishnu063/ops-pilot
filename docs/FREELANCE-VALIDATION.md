@@ -1,5 +1,6 @@
 # Freelance workspace validation
 
+Current agency additions, all 50 step statuses and subsequent evidence are in [AGENCY-ROADMAP.md](AGENCY-ROADMAP.md), [AGENCY-OPERATIONS.md](AGENCY-OPERATIONS.md) and [AGENCY-VALIDATION.md](AGENCY-VALIDATION.md). The foundation results below retain their original date.
 Observed locally on 2026-10-23. All listings, acceptance records and artifacts used
 in these checks were synthetic. No customer infrastructure or platform account
 was accessed.

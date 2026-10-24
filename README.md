@@ -491,4 +491,6 @@ Private SQLite backup/verification/fresh-destination restoration includes stored
 - [Selective repository/license decisions](docs/REPOSITORY-DECISIONS.md)
 - [Synthetic pilot evidence](docs/evidence/synthetic-pilot.json) and [example handover](docs/example-delivery/HANDOVER.md)
 
-Use the existing studio setup below/above, then open Project operations for owner records and lab controls. The n8n Owner decision form also accepts business record types through Record JSON. Neither interface sends customer messages. The studio screenshot earlier in this README depicts the foundation; updated browser/CI evidence is tracked in validation. Existing architecture remains loopback Ops Pilot + SQLite as authoritative state, optional n8n as orchestration, and the pinned triage engine for original monitoring. No additional orchestration framework is required.
+Use the existing [studio setup guide](docs/FREELANCE.md), then open Project operations for owner records and lab controls. The n8n Owner decision form also accepts business record types through Record JSON. Neither interface sends customer messages. The screenshot below is a reviewed synthetic agency example from Linux browser acceptance. It shows no customer work or earnings. Existing architecture remains loopback Ops Pilot + SQLite as authoritative state, optional n8n as orchestration, and the pinned triage engine for original monitoring. No additional orchestration framework is required.
+
+![Synthetic agency studio with owner business records](docs/images/agency-studio.png)

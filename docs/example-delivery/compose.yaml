@@ -6,7 +6,7 @@ services:
     cpus: 0.5
     pids_limit: 100
     labels:
-      io.ops-pilot.job: e7bc4f08e00e
+      io.ops-pilot.job: fff1f8c47838
     ports:
       - "127.0.0.1:${OPS_PILOT_HOST_PORT:-8080}:8000"
     security_opt:

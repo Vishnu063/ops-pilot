@@ -46,13 +46,15 @@ def backup(workspace, destination):
 
 
 def restore(source, destination):
-    verify(source)
+    manifest = verify(source)
     dest = Path(destination)
     dest.mkdir(mode=0o700,parents=False,exist_ok=False)
     try:
         root = dest/'freelance'; root.mkdir(mode=0o700)
         shutil.copyfile(Path(source)/'workspace.sqlite3',root/'workspace.sqlite3')
         (root/'workspace.sqlite3').chmod(0o600)
+        if hashlib.sha256((root/'workspace.sqlite3').read_bytes()).hexdigest() != manifest['sha256']:
+            raise ValueError('Backup changed during restore')
         # Old approvals must never authorize side effects following recovery.
         with sqlite3.connect(root/'workspace.sqlite3') as db:
             for ident,payload in db.execute('SELECT id,payload FROM jobs').fetchall():

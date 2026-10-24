@@ -44,6 +44,12 @@ def handle(action, job, data):
             datetime.fromisoformat(item['due']).replace(tzinfo=timezone.utc)
         if item.get('depends_on') == item['id'] or (item.get('depends_on') and item['depends_on'] not in a['tasks']):
             raise ValueError('Dependency must be an existing different task')
+        dependency=item.get('depends_on')
+        visited={item['id']}
+        while dependency:
+            if dependency in visited: raise ValueError('Task dependency cycle refused')
+            visited.add(dependency)
+            dependency=a['tasks'].get(dependency,{}).get('depends_on')
         if item['status'] == 'done' and item.get('depends_on') and a['tasks'][item['depends_on']]['status'] != 'done':
             raise ValueError('Complete the dependency first')
         a['tasks'][item['id']] = item

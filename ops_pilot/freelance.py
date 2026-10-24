@@ -74,6 +74,7 @@ class Workspace:
         self.lock = threading.RLock()
         with self.connect() as db:
             db.execute('CREATE TABLE IF NOT EXISTS jobs (id TEXT PRIMARY KEY, source_key TEXT UNIQUE, payload TEXT NOT NULL)')
+            db.execute('CREATE TABLE IF NOT EXISTS revisions (job TEXT, revision INTEGER, payload TEXT NOT NULL, PRIMARY KEY(job,revision))')
             db.execute('CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY, job TEXT, time TEXT, action TEXT, revision INTEGER)')
             db.execute('CREATE TABLE IF NOT EXISTS audit (id INTEGER PRIMARY KEY, job TEXT, time TEXT, action TEXT, revision INTEGER, actor TEXT, evidence TEXT)')
             db.execute('CREATE TABLE IF NOT EXISTS payments (reference TEXT PRIMARY KEY, job TEXT, currency TEXT, gross INTEGER, fee INTEGER, time TEXT)')
@@ -107,7 +108,7 @@ class Workspace:
             raise ValueError('Job not found')
         return json.loads(row[0])
 
-    def import_job(self, data):
+    def import_job(self, data, actor="manual"):
         allowed = {'title', 'description', 'platform', 'url', 'source_id', 'budget', 'currency'}
         if not isinstance(data, dict) or set(data) - allowed:
             raise ValueError('Unknown listing fields')
@@ -131,17 +132,21 @@ class Workspace:
             if existing:
                 return json.loads(existing[0])
             db.execute('INSERT INTO jobs VALUES (?,?,?)', (job['id'], key, json.dumps(job)))
+            db.execute('INSERT INTO revisions VALUES (?,?,?)',(job['id'],job['revision'],json.dumps(job)))
             db.execute('INSERT INTO events(job,time,action,revision) VALUES (?,?,?,?)', (job['id'], now(), 'import', 1))
+            db.execute('INSERT INTO audit(job,time,action,revision,actor,evidence) VALUES (?,?,?,?,?,?)',
+                (job['id'],now(),'import',1,actor,'saved:'+key))
         return job
 
     def state(self):
         with self.connect() as db:
             jobs = [json.loads(r[0]) for r in db.execute('SELECT payload FROM jobs ORDER BY rowid DESC LIMIT 200')]
             events = [dict(job=j, time=t, action=a, revision=v) for j,t,a,v in db.execute('SELECT job,time,action,revision FROM events ORDER BY id DESC LIMIT 80')]
+            audit = [dict(job=j,time=t,action=a,revision=v,actor=actor,result=e) for j,t,a,v,actor,e in db.execute('SELECT job,time,action,revision,actor,evidence FROM audit ORDER BY id DESC LIMIT 80')]
             totals = [dict(currency=c, gross_cents=g, fee_cents=f, net_cents=g-f) for c,g,f in db.execute('SELECT currency,SUM(gross),SUM(fee) FROM payments GROUP BY currency')]
             for job in jobs:
                 job['business_summary'] = agency.summary(job, db.execute('SELECT gross,fee FROM payments WHERE job=?', (job['id'],)).fetchall())
-        return dict(jobs=jobs, events=events, earnings=totals,
+        return dict(jobs=jobs, events=events, audit=audit, earnings=totals,
                     agents=[dict(id=k, name=v[0], description=v[1], mode='bounded local automation') for k,v in AGENTS.items()],
                     connectors={'upwork': 'not connected; manual import supported', 'fiverr': 'not connected',
                                 'openhands': 'not connected', 'ai_model': 'not configured; deterministic drafts',
@@ -173,7 +178,7 @@ class Workspace:
         if not isinstance(data, dict):
             raise ValueError('data must be an object')
         if action == 'import':
-            job = self.import_job(data)
+            job = self.import_job(data,actor="owner" if owner else "workflow")
             return dict(job=job, summary_html=self.summary())
         if action in ('lab_run', 'lab_recover'):
             from .deployment_lab import Lab
@@ -255,6 +260,7 @@ class Workspace:
                 except sqlite3.IntegrityError as exc:
                     raise ValueError('Payment reference already recorded; no duplicate added') from exc
             db.execute('UPDATE jobs SET payload=? WHERE id=?', (json.dumps(job), job['id']))
+            db.execute('INSERT INTO revisions VALUES (?,?,?)',(job['id'],job['revision'],json.dumps(job)))
             db.execute('INSERT INTO events(job,time,action,revision) VALUES (?,?,?,?)', (job['id'], now(), action, job['revision']))
             db.execute('INSERT INTO audit(job,time,action,revision,actor,evidence) VALUES (?,?,?,?,?,?)',
                 (job['id'], now(), action, job['revision'], 'owner' if owner else 'workflow', self.digest(job)))
@@ -366,6 +372,11 @@ class Workspace:
             return dict(currency=job['currency'], payments=[dict(reference=r,gross_cents=g,fee_cents=f,time=t) for r,g,f,t in rows],
                         net_cents=sum(g-f for _,g,f,_ in rows), source='owner-recorded; not bank or platform verified')
         raise ValueError('Unknown agent')
+
+    def history(self, job_id):
+        self.get(job_id)
+        with self.connect() as db:
+            return [json.loads(row[0]) for row in db.execute('SELECT payload FROM revisions WHERE job=? ORDER BY revision DESC LIMIT 100',(job_id,))]
 
     def package(self, job_id):
         job = self.get(job_id)

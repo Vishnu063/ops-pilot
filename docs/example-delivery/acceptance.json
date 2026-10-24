@@ -1,5 +1,5 @@
 {
-  "job": "e7bc4f08e00e",
+  "job": "fff1f8c47838",
   "image": "example/synthetic-app@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
   "internal_port": 8000,
   "health_path": "/health",

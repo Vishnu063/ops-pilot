@@ -69,6 +69,7 @@ class Lab:
                 raise ValueError('Job changed while recording lab evidence')
             job['revision'] += 1; job['updated'] = now()
             db.execute('UPDATE jobs SET payload=? WHERE id=?',(json.dumps(job),job['id']))
+            db.execute('INSERT INTO revisions VALUES (?,?,?)',(job['id'],job['revision'],json.dumps(job)))
             db.execute('INSERT INTO events(job,time,action,revision) VALUES (?,?,?,?)',(job['id'],now(),action,job['revision']))
             db.execute('INSERT INTO audit(job,time,action,revision,actor,evidence) VALUES (?,?,?,?,?,?)',
                 (job['id'],now(),action,job['revision'],'owner',json.dumps(job.get('lab',{}))))

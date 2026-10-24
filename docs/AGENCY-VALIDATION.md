@@ -24,3 +24,11 @@ The workspace directory unexpectedly disappeared during validation, including un
 ## Remaining external actions
 
 No customer infrastructure, cloud account, signed agreement, verified authorization, actual acceptance, bank receipt, paid pilot or platform account was supplied. No proposals/messages were sent, services publicly exposed, payments collected or customer changes performed. External acceptance cannot be marked complete by an owner checkbox or a synthetic test. Optional repositories remain deferred as described in the decision inventory. n8n credentials/volumes require their own backup; this repository's snapshot tool cannot replace it.
+
+## Verified continuation evidence
+
+[Run 40032826085](https://github.com/Vishnu063/ops-pilot/actions/runs/40032826085) passed all six existing jobs on commit `54faba2946b080626abb877932fa4c7773776044`: Python 3.11/3.12/3.13 tests and installation/syntax/workflow checks, desktop/mobile browser journeys, original and generated-bundle real Docker labs, and actual systemd start/crash recovery. Mobile overflow and an incompatible privileged nginx fixture were corrected before this pass. The compatible unprivileged practice image uses port 8080; see [upstream image documentation](https://github.com/nginx/docker-nginx-unprivileged). Healthy readiness passed, unhealthy readiness failed within its bound, and both cleanups were verified. This is practice acceptance only.
+
+Browser artifacts were downloaded from that run and visually inspected at desktop/mobile sizes. The synthetic screenshot and browser result are saved under docs/images/agency-studio.png and docs/evidence/agency-browser.json. Later evidence/history/daemon protections have local regression tests and require the final CI result below.
+
+Local disposable n8n installation failed following network errors, then exhausted available disk on retry. Only task-owned runtime/cache files were removed; no existing n8n installation was modified. The real n8n journey is being run in an isolated Linux CI job with Node 24 (required by n8n 2.44.6). The first attempt could not reach a ready form; sanitized runtime diagnostics were added. No n8n end-to-end success is claimed from that failure.
