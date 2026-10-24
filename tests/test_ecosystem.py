@@ -36,6 +36,13 @@ class EventHubTests(unittest.TestCase):
   with self.assertRaises(ValueError):self.hub.action(dict(incident_id=ident,revision=current['revision'],action='apply',plan_id=None))
   with self.assertRaises(ValueError):self.hub.action(dict(incident_id=ident,revision=0,action='investigate',plan_id=None))
   self.pilot.action.assert_not_called()
+ def test_audit_export_pages_without_silently_losing_late_events(self):
+  ident=None
+  for _ in range(30):ident=self.hub.ingest(self.event(),'alertmanager')['incident_id']
+  first=self.hub.report(ident);self.assertFalse(first['data']['audit_complete'])
+  second=self.hub.report(ident,first['data']['audit_next_after'])
+  self.assertIsNone(second['data']['audit_next_after'])
+  self.assertEqual(30,len(first['data']['timeline'])+len(second['data']['timeline']))
  def test_audit_append_only_and_report_references(self):
   ident=self.hub.ingest(self.event(),'alertmanager')['incident_id']
   import sqlite3

@@ -99,7 +99,7 @@ class Handler(BaseHTTPRequestHandler):
         if url.path == '/api/ecosystem/state':
             return self.send(200,self.server.eventhub.state() if self.server.eventhub else {'connected':False,'reason':'Optional ecosystem is not configured'})
         if url.path == '/api/ecosystem/report' and self.server.eventhub:
-            try:return self.send(200,self.server.eventhub.report(parse_qs(url.query).get('id',[''])[0]))
+            try:return self.send(200,self.server.eventhub.report(parse_qs(url.query).get('id',[''])[0],int(parse_qs(url.query).get('after',['0'])[0])))
             except ValueError:return self.send(409,{'error':'Report missing or exceeds export bounds'})
         if url.path == '/freelance' or (url.path == '/' and self.server.pilot is None):
             if self.server.workspace is None:

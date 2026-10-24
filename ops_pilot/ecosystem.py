@@ -136,7 +136,12 @@ class EventHub:
         with (self.root/'operation.lock').open('a') as process_lock:
             try:fcntl.flock(process_lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
             except BlockingIOError:raise ValueError('Another incident operation is running') from None
-            return self._action(payload,actor)
+            try:return self._action(payload,actor)
+            except (ValueError,RuntimeError,OSError) as error:
+                ident=payload.get('incident_id') if isinstance(payload,dict) else None
+                ident=ident if isinstance(ident,str) and re.fullmatch(r'[a-f0-9]{24}',ident) else None
+                with self.connect() as db:self._audit(db,ident,actor,'operation_refused',{'reason':type(error).__name__})
+                raise
     def _action(self,payload,actor):
         action=payload['action'];incident=self.get(payload['incident_id'])
         with self.lock,self.connect() as db:
@@ -204,11 +209,16 @@ class EventHub:
                 latest=self.get(incident['id']);incident['revision']=latest['revision'];incident['event_ids']=latest['event_ids'];incident['external_resolved']=latest['external_resolved']
                 self._save(db,incident);self._audit(db,incident['id'],actor,action+'_finished',{'plan_id':incident.get('plan_id'),'status':incident['status'],'error':incident.get('last_error'),'evidence_refs':incident.get('diagnosis',{}).get('data',{}).get('evidence_refs',[])})
         return incident
-    def report(self,ident):
+    def report(self,ident,after=0):
+        if type(after) is not int or not 0<=after<=100000000:raise ValueError('Invalid audit cursor')
         incident=self.get(ident)
-        with self.connect() as db:timeline=[dict(time=t,actor=a,action=act,evidence=json.loads(p),hash=h) for t,a,act,p,h in db.execute("SELECT time,actor,action,payload,hash FROM audit WHERE incident=? OR (incident IS NULL AND actor='cloudlaunch' AND time>=?) ORDER BY seq LIMIT 150",(ident,incident['created']-3600))]
+        with self.connect() as db:
+            rows=db.execute("SELECT seq,time,actor,action,payload,hash FROM audit WHERE (incident=? OR (incident IS NULL AND actor='cloudlaunch' AND time>=?)) AND seq>? ORDER BY seq LIMIT 26",(ident,incident['created']-3600,after)).fetchall()
+        more=len(rows)>25;selected=rows[:25]
+        timeline=[dict(seq=seq,time=t,actor=a,action=act,evidence=json.loads(p),hash=h) for seq,t,a,act,p,h in selected]
         unresolved=[] if incident['status']=='verified' else ['Required live recovery/monitoring criteria have not all passed.']
-        return envelope('IncidentReport','ops-pilot',self.service,dict(incident_id=ident,timeline=timeline,unresolved=unresolved,incident=incident),incident['correlation_id'])
+        return envelope('IncidentReport','ops-pilot',self.service,dict(incident_id=ident,timeline=timeline,unresolved=unresolved,incident=incident,
+            audit_complete=after==0 and not more,audit_page_start=after,audit_next_after=selected[-1][0] if more else None),incident['correlation_id'])
     def metrics(self):
         # Board pagination must not undercount aggregate monitoring series.
         with self.connect() as db:
