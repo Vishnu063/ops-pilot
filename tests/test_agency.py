@@ -48,6 +48,18 @@ class AgencyTests(unittest.TestCase):
         self.act('reviewer'); self.act('sign_off',dict(confirmation=self.job['id']))
         self.act('validation',dict(kind='customer_runtime',reference='synthetic-unverified',result='unverified',limitations='No customer access'))
         self.assertNotIn('delivery',self.job['approvals'])
+    def test_changed_evidence_invalidates_download_until_new_signoff(self):
+        import io
+        import zipfile
+        self.build();self.act('reviewer');self.act('sign_off',dict(confirmation=self.job['id']));self.act('delivery')
+        self.ws.package(self.job['id'])
+        self.act('validation',dict(kind='sandbox',reference='synthetic-failure',result='failed',limitations='Simulated evidence, no Docker execution'))
+        with self.assertRaises(ValueError):self.ws.package(self.job['id'])
+        self.act('sign_off',dict(confirmation=self.job['id']));self.act('delivery')
+        with zipfile.ZipFile(io.BytesIO(self.ws.package(self.job['id']))) as archive:
+            evidence=json.loads(archive.read('EVIDENCE.json'))
+            self.assertEqual('failed',evidence['validation_records'][0]['result'])
+
     def test_cross_process_revision_cas(self):
         other = Workspace(self.temp.name)
         payload = dict(action='task',job_id=self.job['id'],revision=self.job['revision'],data=dict(id='x',title='x',owner='x',status='todo'))
@@ -131,6 +143,27 @@ class AgencyTests(unittest.TestCase):
                 self.act('lab_run')
                 self.assertEqual('failed',self.job['lab']['status'])
                 self.assertEqual('TimeoutExpired',self.job['lab']['error'])
+
+    def test_recovery_refuses_a_different_daemon(self):
+        self.build()
+        self.job['lab']=dict(status='interrupted',project='opslab-original',daemon_id='original',endpoint='unix:///original.sock')
+        with self.ws.connect() as db:
+            db.execute('UPDATE jobs SET payload=? WHERE id=?',(json.dumps(self.job),self.job['id']))
+        with patch.object(Lab,'preflight',return_value=({},self.ws.digest(self.job))),patch.object(Lab,'cleanup') as cleanup:
+            with self.assertRaises(ValueError):self.act('lab_recover')
+            cleanup.assert_not_called()
+
+    def test_legacy_artifact_approval_migrates_without_rebuilding_files(self):
+        self.build();self.act('reviewer');self.act('sign_off',dict(confirmation=self.job['id']));self.act('delivery')
+        original=dict(self.job['artifacts'])
+        self.job['approvals']['delivery'].pop('evidence_version')
+        self.job['approvals']['delivery']['digest']=self.ws.digest(self.job)
+        self.job.pop('package_digest')
+        with self.ws.connect() as db:
+            db.execute('UPDATE jobs SET payload=? WHERE id=?',(json.dumps(self.job),self.job['id']))
+        reopened=Workspace(self.temp.name)
+        self.assertEqual(original,reopened.get(self.job['id'])['artifacts'])
+        reopened.package(self.job['id'])
 
     def test_model_is_optional_and_rejects_missing_model_without_download(self):
         from ops_pilot.advisor import Advisor

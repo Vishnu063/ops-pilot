@@ -54,6 +54,14 @@ def money(value):
         raise ValueError('Invalid amount') from exc
 
 
+class PrivateConnection(sqlite3.Connection):
+    def __exit__(self, *args):
+        try:
+            return super().__exit__(*args)
+        finally:
+            self.close()
+
+
 class Workspace:
     def __init__(self, directory):
         self.directory = Path(directory).expanduser() / 'freelance'
@@ -69,9 +77,26 @@ class Workspace:
             db.execute('CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY, job TEXT, time TEXT, action TEXT, revision INTEGER)')
             db.execute('CREATE TABLE IF NOT EXISTS audit (id INTEGER PRIMARY KEY, job TEXT, time TEXT, action TEXT, revision INTEGER, actor TEXT, evidence TEXT)')
             db.execute('CREATE TABLE IF NOT EXISTS payments (reference TEXT PRIMARY KEY, job TEXT, currency TEXT, gross INTEGER, fee INTEGER, time TEXT)')
+            db.execute('BEGIN IMMEDIATE')
+            for ident,payload in db.execute('SELECT id,payload FROM jobs').fetchall():
+                job = json.loads(payload)
+                approval = job['approvals'].get('delivery')
+                if approval and approval.get('evidence_version') != 2:
+                    if approval.get('digest') == self.digest(job) and not job.get('lab') and not job.get('agency',{}).get('validations'):
+                        approval.update(digest=self.review_digest(job),evidence_version=2)
+                        if job['state'] == 'packaged':
+                            job['package_digest'] = self.review_digest(job)
+                    else:
+                        job['approvals'].pop('delivery')
+                        if job['state'] == 'packaged': job['state'] = 'reviewed'
+                    job['revision'] += 1
+                    db.execute('UPDATE jobs SET payload=? WHERE id=?',(json.dumps(job),ident))
+                    db.execute('INSERT INTO audit(job,time,action,revision,actor,evidence) VALUES (?,?,?,?,?,?)',
+                        (ident,now(),'delivery_evidence_migrated',job['revision'],'migration',self.digest(job)))
+
 
     def connect(self):
-        return sqlite3.connect(self.path, timeout=10)
+        return sqlite3.connect(self.path, timeout=10, factory=PrivateConnection)
 
     def get(self, job_id):
         if not isinstance(job_id, str) or not re.fullmatch(r'[a-f0-9]{12}', job_id):
@@ -210,7 +235,7 @@ class Workspace:
                     raise ValueError('Pass the artifact checks before signing off')
                 if data.get('confirmation') != job['id']:
                     raise ValueError('Type the job ID to confirm you reviewed the files and limitations')
-                job['approvals']['delivery'] = dict(time=now(), digest=self.digest(job))
+                job['approvals']['delivery'] = dict(time=now(), digest=self.review_digest(job),evidence_version=2)
             elif action == 'payment':
                 if job['state'] != 'packaged':
                     raise ValueError('Package the work before recording a payment')
@@ -242,11 +267,16 @@ class Workspace:
         return 0 <= (datetime.now(timezone.utc)-datetime.fromisoformat(approval['time'])).total_seconds() <= 3600
 
     @staticmethod
+    def review_digest(job):
+        evidence = dict(artifacts=job['artifacts'], lab=job.get('lab',{}), validations=job.get('agency',{}).get('validations',[]))
+        return hashlib.sha256(json.dumps(evidence,sort_keys=True).encode()).hexdigest()
+
+    @staticmethod
     def digest(job):
         return hashlib.sha256(json.dumps(job['artifacts'], sort_keys=True).encode()).hexdigest()
 
     def agent(self, name, job, data):
-        if name in job['agents'] and name != 'earnings':
+        if name in job['agents'] and name not in ('earnings','delivery'):
             raise ValueError('Agent already completed for this job; output is preserved')
         if name == 'scout':
             return dict(source=job['platform'], provenance='owner-provided listing; not fetched or independently verified', title=job['title'])
@@ -324,9 +354,10 @@ class Workspace:
                         runtime_verified=False, security_audit=False, note='Static starter-bundle checks only. Run agreed acceptance checks before claiming completion.')
         if name == 'delivery':
             approval = job['approvals'].get('delivery')
-            if job['state'] != 'reviewed' or not self.approval_valid(approval) or approval['digest'] != self.digest(job):
+            if job['state'] != 'reviewed' or not self.approval_valid(approval) or approval['digest'] != self.review_digest(job):
                 raise ValueError('Owner must sign off this exact reviewed bundle first')
             job['state'] = 'packaged'
+            job['package_digest'] = self.review_digest(job)
             return dict(download=f'/api/freelance/package?job_id={job["id"]}', sent=False,
                         note='Prepared ZIP, not submitted to the client; live validation remains unverified.')
         if name == 'earnings':
@@ -338,12 +369,16 @@ class Workspace:
 
     def package(self, job_id):
         job = self.get(job_id)
-        if job['state'] != 'packaged':
-            raise ValueError('Review and sign off before downloading')
+        if job['state'] != 'packaged' or job.get('package_digest', self.review_digest(job)) != self.review_digest(job):
+            raise ValueError('Review and sign off current artifacts and evidence before downloading')
         buffer = io.BytesIO()
         with zipfile.ZipFile(buffer, 'w', zipfile.ZIP_DEFLATED) as z:
             for name, contents in job['artifacts'].items():
                 z.writestr(name, contents)
+            validations = job.get('agency',{}).get('validations',[])
+            if job.get('lab') or validations:
+                z.writestr('EVIDENCE.json',json.dumps(dict(lab=job.get('lab',{}),validation_records=validations,
+                    source='Owner records and practice evidence; not proof of customer acceptance'),indent=2))
         return buffer.getvalue()
 
     def summary(self):

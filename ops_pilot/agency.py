@@ -75,6 +75,8 @@ def handle(action, job, data):
             raise ValueError('Choose a validation kind and passed, failed or unverified')
         a['validations'].append(dict(**item, digest=Workspace.digest(job), time=now(), source='owner-recorded'))
         job['approvals'].pop('delivery', None)
+        if job['state'] == 'packaged':
+            job['state'] = 'reviewed'
     elif action == 'customer_acceptance':
         if job['state'] != 'packaged':
             raise ValueError('Package the exact reviewed bundle first')

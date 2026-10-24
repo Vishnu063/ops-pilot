@@ -20,6 +20,8 @@ class NoRedirect(HTTPRedirectHandler):
 class Lab:
     def __init__(self, workspace):
         self.ws = workspace
+        self.daemon_id = None
+        self.endpoint = None
         self.env = {k:v for k,v in os.environ.items() if not k.startswith(('DOCKER_', 'COMPOSE_'))}
 
     def docker(self, args, timeout=30):
@@ -29,7 +31,7 @@ class Lab:
             raise ValueError('Docker command failed: '+args[0])
         return result.stdout
 
-    def preflight(self, job):
+    def preflight(self, job, recover=False):
         if os.environ.get('OPS_PILOT_LAB') != '1':
             raise ValueError('Practice lab is disabled; opt in on an owned test host')
         context = json.loads(self.docker(['context', 'inspect']))
@@ -37,7 +39,13 @@ class Lab:
         if not endpoint.startswith('unix://') or not endpoint[7:].startswith('/'):
             raise ValueError('Lab requires a local Unix Docker endpoint')
         self.env['DOCKER_HOST'] = endpoint
+        self.endpoint = endpoint
+        self.daemon_id = self.docker(['info','--format','{{.ID}}']).strip()
+        if not self.daemon_id:
+            raise ValueError('Docker daemon identity unavailable')
         acceptance = json.loads(job['artifacts']['acceptance.json'])
+        if recover:
+            return acceptance, self.ws.digest(job)
         image = acceptance['image']
         allowed = os.environ.get('OPS_PILOT_LAB_IMAGES','').split(',')
         if not re.fullmatch(r'[a-zA-Z0-9][a-zA-Z0-9._/:-]*@sha256:[a-f0-9]{64}',image) or image not in allowed:
@@ -108,8 +116,12 @@ class Lab:
             job = self.ws.get(payload.get('job_id'))
             if payload.get('revision') != job['revision']:
                 raise ValueError('Job changed; refresh the revision')
-            acceptance, digest = self.preflight(job)
+            if not recover and job.get('agency',{}).get('closed'):
+                raise ValueError('Closed projects cannot start a practice lab')
+            acceptance, digest = self.preflight(job,recover=recover)
             if recover:
+                if job.get('lab',{}).get('daemon_id') != self.daemon_id or job.get('lab',{}).get('endpoint') != self.endpoint:
+                    raise ValueError('Recovery requires the original Docker daemon and Unix endpoint')
                 if job.get('lab',{}).get('status') not in ('running','interrupted','cleanup_failed'):
                     raise ValueError('No interrupted lab to recover')
                 job['lab']['status'] = 'interrupted'
@@ -138,7 +150,7 @@ class Lab:
             project = 'opslab-'+job['id']+'-'+run_id
             job['approvals'].pop('lab')
             job['approvals'].pop('delivery',None)
-            job['lab'] = dict(status='running',project=project,digest=digest,cleanup='pending',runtime_verified=False,
+            job['lab'] = dict(status='running',project=project,digest=digest,daemon_id=self.daemon_id,endpoint=self.endpoint,cleanup='pending',runtime_verified=False,
                 customer_runtime_verified=False,started=datetime.now(timezone.utc).isoformat())
             self.save(job,'lab_approval_consumed')  # durable BEFORE Compose side effects
             compose = ['compose','-p',project,'-f',str(root/'compose.yaml')]
@@ -166,7 +178,7 @@ class Lab:
                         if time.monotonic() >= deadline:
                             raise ValueError('Readiness deadline exceeded')
                         time.sleep(.5)
-                job['lab'].update(status='passed',runtime_verified=True,endpoint=mapping+acceptance['health_path'],expected_status=200)
+                job['lab'].update(status='passed',runtime_verified=True,readiness_endpoint=mapping+acceptance['health_path'],expected_status=200)
             except (ValueError, OSError, subprocess.TimeoutExpired, KeyError, json.JSONDecodeError) as exc:
                 job['lab'].update(status='failed',error=type(exc).__name__)
             finally:
@@ -175,6 +187,8 @@ class Lab:
                     job['lab']['cleanup'] = 'verified'
                 except (ValueError,OSError,subprocess.TimeoutExpired):
                     job['lab'].update(status='cleanup_failed',cleanup='unverified')
+                if job['state'] == 'packaged':
+                    job['state'] = 'reviewed'
                 job['lab']['finished'] = datetime.now(timezone.utc).isoformat()
                 self.save(job,'lab_finished')
             return dict(job=job,summary_html=self.ws.summary())
