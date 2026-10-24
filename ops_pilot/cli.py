@@ -11,6 +11,7 @@ def main():
     parser.add_argument("--state-dir", type=Path, default=DEFAULT_STATE)
     parser.add_argument("--port", type=int, default=8767)
     parser.add_argument("--ai-model", help="Optional installed local Ollama model. Advisory only; no auto download.")
+    parser.add_argument("--ecosystem-service",help="Opt in to the event inbox for this exact service ID; source/read tokens come from private environment variables")
     args = parser.parse_args()
     try:
         if args.command == "setup":
@@ -40,7 +41,11 @@ def main():
             report = pilot.report
             print(json.dumps(report, indent=2))
             return 2 if report["snapshot"].get("errors") else 1 if report["findings"] else 0
-        run(pilot, args.port, Workspace(args.state_dir))
+        hub=None
+        if args.ecosystem_service:
+            from .ecosystem import EventHub
+            hub=EventHub(pilot,args.state_dir,args.ecosystem_service)
+        run(pilot, args.port, Workspace(args.state_dir), hub)
         return 0
     except (ValueError, RuntimeError, OSError, EOFError) as exc:
         print("Ops Pilot could not continue:", str(exc))
@@ -50,3 +55,4 @@ def main():
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
