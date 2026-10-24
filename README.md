@@ -29,7 +29,7 @@ A separate workspace now tracks freelance projects through nine bounded local ro
 
 ![Freelance studio — synthetic demonstration](docs/images/freelance-studio.png)
 
-**[Open the easy setup guide](docs/FREELANCE.md)** · **[Import the n8n canvas](n8n/freelance-agency.json)** · [Observed validation](docs/FREELANCE-VALIDATION.md)
+**[All 50 agency steps](docs/AGENCY-ROADMAP.md)** · **[Current verification](docs/AGENCY-VALIDATION.md)** · **[Open the easy setup guide](docs/FREELANCE.md)** · **[Import the n8n canvas](n8n/freelance-agency.json)** · [Observed validation](docs/FREELANCE-VALIDATION.md)
 
 The n8n control form supports importing a listing, viewing all project outputs and files, owner decisions, worker/reviewer execution, earnings and ZIP download. Credentials and a running backend must be configured on your own server. The original monitoring dashboard links to `/freelance`; standalone mode also works without a configured Docker target. These additions do not turn the preview into an autonomous or production-ready freelance business.
 
@@ -478,6 +478,8 @@ support yet. Hosting and optional AI still consume resources even when software
 has no subscription fee. No production changes have been made by building this repo.
 
 ## Agency continuation
+
+All seven implementation CI jobs passed, including real generated-bundle Docker and authenticated n8n form-to-ZIP acceptance: [verified run](https://github.com/Vishnu063/ops-pilot/actions/runs/40047437636). The roadmap has 32 verified repository/synthetic steps and 18 prepared/documented steps; real customer actions remain pending.
 
 The existing monitor and nine-role freelance studio now include owner-maintained requirements, tasks/dependencies, scope-change records, invoices, expenses, time/labor, validation references, customer acceptance and offboarding. Finances stay separated by project/currency. Records are assertions, not independently verified consent or money.
 
