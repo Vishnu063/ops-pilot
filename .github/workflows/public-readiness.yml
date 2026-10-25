@@ -31,7 +31,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: Vishnu063/devops-troubleshooting-labs
-          ref: e9100c28609fe48bc6e17ab58fb1070ed4382b8c
+          ref: 7e68ff820049deddccd2f086d0e15e49dd56aec1
           path: labs
           persist-credentials: false
       - name: Start isolated nested daemon under an enforced 8 GB ceiling
@@ -67,11 +67,12 @@ jobs:
       - name: Record enclosing memory and OOM evidence
         if: always()
         run: |
-          docker inspect --format '{"memory_limit_bytes":{{.HostConfig.Memory}},"oom_killed":{{.State.OOMKilled}}}' ops-public-budget > budget.json
+          docker inspect --format '{"memory_limit_bytes":{{.HostConfig.Memory}},"oom_killed":{{.State.OOMKilled}},"running":{{.State.Running}},"exit_code":{{.State.ExitCode}}}' ops-public-budget > budget.json
           docker exec ops-public-budget sh -c 'cat /sys/fs/cgroup/memory.peak; cat /sys/fs/cgroup/memory.events' > budget-cgroup.txt
+          docker exec ops-public-budget cat /sys/fs/cgroup/memory.events.local > budget-local-events.txt
           if [ -f constrained-evidence/result.json ]; then cat constrained-evidence/result.json; fi
           if [ -f extended-evidence/extended-result.json ]; then cat extended-evidence/extended-result.json; fi
-          cat budget.json budget-cgroup.txt
+          cat budget.json budget-cgroup.txt budget-local-events.txt
       - name: Remove only this job's nested environment
         if: always()
         run: |
@@ -87,3 +88,4 @@ jobs:
             extended-evidence/
             budget.json
             budget-cgroup.txt
+            budget-local-events.txt
