@@ -10,7 +10,8 @@ from urllib.parse import parse_qs, urlsplit
 
 class Server(ThreadingHTTPServer):
     daemon_threads = True
-    def __init__(self, pilot, port=8767, workspace=None, eventhub=None):
+    def __init__(self, pilot, port=8767, workspace=None, eventhub=None, diagnostics=None):
+        self.diagnostics = diagnostics
         self.eventhub = eventhub
         self.pilot = pilot
         self.workspace = workspace
@@ -82,10 +83,12 @@ class Handler(BaseHTTPRequestHandler):
                 except ValueError as exc:
                     return self.send(409, {'error': str(exc)})
             return self.send(200, workspace.state() if url.path.endswith('state') else {'summary_html': workspace.summary()})
-        if url.path in ('/integration/state','/metrics') and self.server.eventhub is not None:
+        if url.path in ('/integration/state','/integration/diagnostics','/metrics') and self.server.eventhub is not None:
             if not self.server.eventhub.authorized(self.headers.get('Authorization',''),read=True):
                 return self.send(401,{'error':'Configure the private read-only integration credential'})
             if url.path=='/metrics':return self.send(200,self.server.eventhub.metrics(),'text/plain')
+            if url.path=='/integration/diagnostics':
+                return self.send(200,self.server.diagnostics.state() if self.server.diagnostics else {'connected':False})
             return self.send(200,self.server.eventhub.state())
         if url.path == "/login":
             supplied = parse_qs(url.query).get("token", [""])[0]
@@ -94,6 +97,16 @@ class Handler(BaseHTTPRequestHandler):
             return self.send(303, "", "text/plain", {"Location": "/", "Set-Cookie": "ops_pilot=" + self.server.token + "; HttpOnly; SameSite=Strict; Path=/"})
         if not self.authenticated():
             return self.send(401, "Open the login link printed by start.sh. On EC2, create the SSH tunnel first. Restarting Ops Pilot changes the link.", "text/plain")
+        if url.path == '/diagnostics':
+            return self.send(200, Path(__file__).with_name('diagnostics.html').read_text(), 'text/html')
+        if url.path in ('/api/diagnostics/state', '/api/diagnostics/report'):
+            desk = self.server.diagnostics
+            if desk is None:
+                return self.send(200, {'connected': False, 'reason': 'Read-only diagnostics are not configured'})
+            try:
+                return self.send(200, desk.state() if url.path.endswith('/state') else desk.report(parse_qs(url.query).get('id', [''])[0]))
+            except ValueError:
+                return self.send(404, {'error': 'Diagnostic report not found in this environment'})
         if url.path == '/ecosystem':
             return self.send(200,Path(__file__).with_name('ecosystem.html').read_text(),'text/html')
         if url.path == '/api/ecosystem/state':
@@ -134,6 +147,8 @@ class Handler(BaseHTTPRequestHandler):
         return self.send(404, {"error": "Not found"})
 
     def do_POST(self):
+        if self.path in ('/api/diagnostics/collect', '/api/diagnostics/trivy'):
+            return self.diagnostic_request()
         if self.path in ('/webhooks/ecosystem','/webhooks/alertmanager','/api/ecosystem/action'):
             return self.ecosystem_request()
         if self.path in ('/api/freelance/action', '/bridge/action'):
@@ -192,6 +207,32 @@ class Handler(BaseHTTPRequestHandler):
             return self.send(503, {'error': 'Workspace storage unavailable'})
 
 
+    def diagnostic_request(self):
+        if not self.host_allowed() or not self.authenticated() or self.headers.get('Origin') not in self.server.origins:
+            return self.send(403, {'error': 'Owner session required; read/source credentials cannot collect or import'})
+        desk = self.server.diagnostics
+        if desk is None:
+            return self.send(404, {'error': 'Read-only diagnostics are not configured'})
+        try:
+            if self.headers.get('Transfer-Encoding') or self.headers.get('Content-Type', '').split(';')[0] != 'application/json':
+                raise ValueError('Use bounded JSON')
+            length = int(self.headers.get('Content-Length', '0'))
+            if not 0 < length <= 262144:
+                raise ValueError('Input exceeds bounds')
+            self.connection.settimeout(5)
+            data = json.loads(self.rfile.read(length))
+            if self.path.endswith('/collect'):
+                if not isinstance(data, dict) or set(data) != {'tool'} or not isinstance(data['tool'], str):
+                    raise ValueError('Select one configured tool')
+                result = desk.collect(data['tool'])
+            else:
+                result = desk.trivy(data)
+            return self.send(200, result)
+        except (ValueError, TypeError, KeyError, RuntimeError):
+            return self.send(409, {'error': 'Diagnostic request refused; check configured scope and report bounds'})
+        except OSError:
+            return self.send(503, {'error': 'Private diagnostic storage unavailable'})
+
     def ecosystem_request(self):
         hub=self.server.eventhub
         if hub is None:return self.send(404,{'error':'Optional ecosystem not configured'})
@@ -221,8 +262,8 @@ class Handler(BaseHTTPRequestHandler):
         except (ValueError,TypeError,KeyError,RuntimeError):return self.send(409,{'error':'Event or action refused; refresh and inspect current evidence'})
         except OSError:return self.send(503,{'error':'Local evidence storage or transport unavailable'})
 
-def run(pilot, port, workspace=None, eventhub=None):
-    server = Server(pilot, port, workspace, eventhub)
+def run(pilot, port, workspace=None, eventhub=None, diagnostics=None):
+    server = Server(pilot, port, workspace, eventhub, diagnostics)
     print(f"Open http://127.0.0.1:{server.server_port}/login?token={server.token}", flush=True)
     print("Single-owner preview. Keep this login link private. Ctrl+C stops monitoring.", flush=True)
     if pilot is not None:
