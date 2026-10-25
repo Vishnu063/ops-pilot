@@ -67,3 +67,22 @@ runs package installation at boot or alters an app container's startup policy.
 Systemd restarts the monitor on failure; it does not approve/replay application
 repairs. A full host reboot and production deployment still require host-specific
 validation. See README for private journal/tunnel access and removal.
+
+
+## Read-only diagnostics beside approved recovery
+
+```mermaid
+flowchart LR
+  Native[Scoped native CLI / HTTPS APIs] --> Desk[Read-only diagnostics desk]
+  Trivy[Owner-supplied Trivy report] --> Desk
+  Desk --> Evidence[Private environment reports and audit]
+  Owner[Loopback owner session] --> Desk
+  Events[Authenticated deployment / monitoring events] --> Inbox[Existing incident ledger]
+  Inbox --> Plan[Exact Docker proposal]
+  Plan --> Approval[Separate owner approval]
+  Approval --> Apply[Allowlisted exact-target restart]
+  Apply --> Verify[Container + HTTP + fresh metrics + resolution]
+  Verify --> Evidence
+```
+
+The diagnostics desk has no repair endpoint and cannot issue shell commands from requests. Native read credentials, source/read keys and owner approval are different capabilities. Environment IDs separate reports for a trusted owner; they are not a multi-tenant isolation claim. See [self-hosting](SELF-HOSTING.md).

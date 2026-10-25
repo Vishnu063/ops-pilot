@@ -5,12 +5,15 @@ import json
 import os
 from pathlib import Path
 import secrets
+import threading
 from urllib.parse import parse_qs, urlsplit
 
 
 class Server(ThreadingHTTPServer):
     daemon_threads = True
+    request_queue_size = 8
     def __init__(self, pilot, port=8767, workspace=None, eventhub=None, diagnostics=None):
+        self.request_slots = threading.BoundedSemaphore(8)
         self.diagnostics = diagnostics
         self.eventhub = eventhub
         self.pilot = pilot
@@ -29,9 +32,28 @@ class Server(ThreadingHTTPServer):
         super().__init__(("127.0.0.1", port), Handler)
         self.origins = {f"http://127.0.0.1:{self.server_port}", f"http://localhost:{self.server_port}"}
 
+    def process_request(self, request, client_address):
+        if not self.request_slots.acquire(blocking=False):
+            self.shutdown_request(request)
+            return
+        try:
+            super().process_request(request, client_address)
+        except BaseException:
+            self.request_slots.release()
+            raise
+
+    def process_request_thread(self, request, client_address):
+        try:
+            super().process_request_thread(request, client_address)
+        finally:
+            self.request_slots.release()
+
 
 class Handler(BaseHTTPRequestHandler):
     server_version = "OpsPilot"
+    def setup(self):
+        self.request.settimeout(10)
+        super().setup()
     def log_message(self, *args):
         pass  # Login URLs and private incident data must not enter access logs.
 

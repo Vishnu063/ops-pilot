@@ -27,7 +27,9 @@ class DiagnosticHTTPTests(unittest.TestCase):
                 if origin:h['Origin']=base
                 try:
                     with opener.open(Request(base+path,headers=h,data=None if data is None else json.dumps(data).encode()),timeout=5) as r:return r.status,json.load(r)
-                except HTTPError as e:return e.code,json.load(e)
+                except HTTPError as e:
+                    raw=e.read().decode()
+                    return e.code,json.loads(raw) if e.headers.get('Content-Type','').startswith('application/json') else {'error':raw}
             with patch.object(ToolAdapter,'collect',side_effect=AssertionError('Denied callers cannot reach a collector')):
                 self.assertEqual(request('/api/diagnostics/collect',{'tool':'jenkins'})[0],403)
                 self.assertEqual(request('/api/diagnostics/collect',{'tool':'jenkins'},headers={'Authorization':'Bearer '+'a'*40})[0],403)
