@@ -110,7 +110,7 @@ class EventHub:
                 if not math.isfinite(value) or abs(value)>1e15:raise ValueError('Invalid metric observation')
                 data['observed_value']=value
             # Stable id across Alertmanager retries/restarts, but changes on new firing cycle.
-            ident=digest([fingerprint,status,alert.get('startsAt'),alert.get('endsAt') if status=='resolved' else None])
+            ident=digest([fingerprint,status,alert.get('startsAt'),alert.get('endsAt') if status=='resolved' else None,data])
             event=envelope('MonitoringAlert','alertmanager',self.service,data,correlation_id='alert-'+fingerprint,event_id=ident)
             event['timestamp']=alert.get('endsAt') if status=='resolved' else alert.get('startsAt')
             results.append(self.ingest(event,'alertmanager'))
@@ -215,7 +215,7 @@ class EventHub:
                 report=self.pilot.action('investigate');health=self.pilot.probe(self.pilot.health)
                 container_ok=not report.get('findings') and not report.get('snapshot',{}).get('errors')
                 observed=report.get('snapshot',{}).get('observations',{})
-                if incident.get('execution'):
+                if incident.get('execution') or incident.get('plan_id'):
                     expected=incident.get('proposal',{}).get('data',{}).get('action',{}).get('argv',[])
                     prior=incident.get('evidence',{}).get('snapshot',{}).get('observations',{})
                     identity_ok=bool(expected and observed.get('id')==[expected[-1]] and prior.get('daemon_id') and observed.get('daemon_id')==prior['daemon_id'])

@@ -4,7 +4,7 @@ This review continues PR #6 on top of main `3a634efd6bed00fc721db84f916d9c613d6d
 
 ## Fixed recovery boundaries
 
-* Alertmanager state is monotonic by fingerprint/timestamp. New firing clears resolution, old retries cannot resolve a newer cycle, tied timestamps fail closed, and non-Alertmanager producers cannot satisfy monitoring resolution. Legacy resolution booleans without current alert state are insufficient.
+* Identical webhook retries remain idempotent, while changed numeric observations produce distinct evidence on the same incident. Alertmanager state is monotonic by fingerprint/timestamp. New firing clears resolution, old retries cannot resolve a newer cycle, tied timestamps fail closed, and non-Alertmanager producers cannot satisfy monitoring resolution. Legacy resolution booleans without current alert state are insufficient.
 * A new firing received while health/metrics are being checked prevents terminal closure. Prometheus responses must be successful vectors with recent, nonfuture samples.
 * Post-repair verification checks the planned immutable container ID and observed daemon against investigation evidence. A healthy replacement under the same name does not complete the prior repair.
 * Unavailable/incompatible optional K8sGPT output remains explicitly inconclusive while valid native evidence is retained. Malformed provider responses do not become healthy reports. Private diagnostics configuration must be a regular file, not a pipe/device/symlink.

@@ -45,7 +45,7 @@ class EventHubTests(unittest.TestCase):
  def test_replacement_or_daemon_change_during_post_repair_verification_is_not_recovery(self):
   for observed_id,daemon in [('b'*64,'daemon-a'),('a'*64,'daemon-b')]:
    ident=self.hub.ingest(self.event(),'alertmanager')['incident_id'];self.hub.ingest(self.event('resolved'),'alertmanager')
-   incident=self.hub.get(ident);incident.update(status='awaiting_monitoring',execution={'status':'verified'},
+   incident=self.hub.get(ident);incident.update(status='awaiting_monitoring',execution={'status':'verified'},plan_id='bound-plan',
     evidence={'snapshot':{'observations':{'daemon_id':['daemon-a']}}},proposal={'data':{'action':{'argv':['docker','restart','a'*64]}}})
    with self.hub.connect() as db:self.hub._save(db,incident)
    self.pilot.action.return_value={'findings':[],'snapshot':{'errors':[],'observations':{'id':[observed_id],'daemon_id':[daemon]}}}
@@ -82,6 +82,14 @@ class EventHubTests(unittest.TestCase):
    result=self.hub.action(dict(incident_id=ident,revision=incident['revision'],action='investigate',plan_id=None))
   self.assertEqual('diagnosed',result['status']);self.assertEqual('inconclusive',result['k8sgpt']['status'])
   self.assertTrue(result['evidence']['findings']);self.assertEqual(1,self.pilot.action.call_count)
+ def test_metric_updates_are_distinct_but_identical_webhook_retries_are_idempotent(self):
+  alert=dict(labels={'service':'demo','alertname':'CPUHigh'},fingerprint='metric-update',status='firing',startsAt=datetime.now(timezone.utc).isoformat(),annotations={'observed_value':'96.2'})
+  first=self.hub.alertmanager({'alerts':[alert]})['results'][0]
+  retry=self.hub.alertmanager({'alerts':[alert]})['results'][0];self.assertTrue(retry['duplicate'])
+  alert['annotations']['observed_value']='97.1'
+  update=self.hub.alertmanager({'alerts':[alert]})['results'][0]
+  self.assertEqual(first['incident_id'],update['incident_id'])
+  with self.hub.connect() as db:self.assertEqual(2,db.execute('SELECT count(*) FROM incoming').fetchone()[0])
  def test_apply_without_approval_and_stale_revisions_are_refused(self):
   ident=self.hub.ingest(self.event(),'alertmanager')['incident_id'];current=self.hub.get(ident)
   with self.assertRaises(ValueError):self.hub.action(dict(incident_id=ident,revision=current['revision'],action='apply',plan_id=None))
