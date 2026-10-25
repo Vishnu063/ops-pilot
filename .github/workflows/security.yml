@@ -1,0 +1,38 @@
+name: Security boundaries
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-security:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install development-only source scanner
+        run: python -m pip install bandit==1.8.6
+      - name: Scan production Python for medium-or-higher confident findings
+        run: bandit -r ops_pilot -ll -ii -f json -o security-results.json
+      - name: Verify immutable native-engine dependency
+        run: |
+          python - <<'PY'
+          import re,tomllib
+          from pathlib import Path
+          project=tomllib.loads(Path('pyproject.toml').read_text())['project']
+          assert len(project['dependencies'])==1
+          assert re.fullmatch(r'devops-triage-assistant @ https://github.com/Vishnu063/devops-triage-assistant/archive/[0-9a-f]{40}\.zip',project['dependencies'][0])
+          print('Native engine remains pinned to an exact immutable source commit. This is not a vulnerability-clearance claim.')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: source-security-evidence
+          path: security-results.json

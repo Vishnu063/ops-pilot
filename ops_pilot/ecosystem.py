@@ -2,6 +2,7 @@
 from datetime import datetime, timezone
 import hashlib
 import json
+import math
 import os
 import re
 from pathlib import Path
@@ -75,10 +76,17 @@ class EventHub:
             if not incident and failure:
                 ident=digest([self.service,fingerprint,event['id']])[:24]
                 incident=dict(id=ident,service=self.service,correlation_id=event['correlation_id'],fingerprint=fingerprint,status='detected',revision=0,
-                    binding=self.binding,created=time.time(),last_seen=time.time(),event_ids=[],plan_id=None,busy=False,external_resolved=False)
+                    binding=self.binding,created=time.time(),last_seen=time.time(),event_ids=[],plan_id=None,busy=False,external_resolved=False,
+                    trigger=redact(event),alert_states={})
             if incident:
                 incident['event_ids']=(incident['event_ids']+[event['id']])[-100:];incident['last_seen']=time.time()
-                if data['status']=='resolved':incident['external_resolved']=True
+                if event['type']=='MonitoringAlert' and source=='alertmanager':
+                    states=incident.setdefault('alert_states',{})
+                    previous=states.get(fingerprint)
+                    # Late retries cannot resolve a newer firing cycle. Ties fail closed.
+                    if previous is None or when>previous['timestamp'] or (when==previous['timestamp'] and data['status']=='firing'):
+                        states[fingerprint]={'status':data['status'],'timestamp':when}
+                    incident['external_resolved']=bool(states) and all(s['status']=='resolved' for s in states.values())
                 self._save(db,incident)
             ident=incident['id'] if incident else None
             db.execute('INSERT INTO incoming VALUES (?,?,?,?,?)',(key,hashed,ident,json.dumps(redact(event)),time.time()))
@@ -88,11 +96,19 @@ class EventHub:
         if not isinstance(payload,dict) or not isinstance(payload.get('alerts'),list) or not 1<=len(payload['alerts'])<=100:raise ValueError('Use a bounded Alertmanager webhook')
         results=[]
         for alert in payload['alerts']:
+            if not isinstance(alert,dict) or not isinstance(alert.get('labels'),dict):raise ValueError('Bounded alert objects and labels required')
             labels=alert.get('labels',{});fingerprint=alert.get('fingerprint')
             if not isinstance(fingerprint,str) or not fingerprint or labels.get('service')!=self.service:raise ValueError('Alert service/fingerprint required')
             status=alert.get('status')
             data={'fingerprint':fingerprint,'status':status,'alertname':str(labels.get('alertname','unknown'))[:100],
                   'labels':{k:str(labels[k])[:200] for k in ('severity','job','service') if k in labels}}
+            annotations=alert.get('annotations') or {}
+            if not isinstance(annotations,dict):raise ValueError('Alert annotations must be an object')
+            if 'observed_value' in annotations:
+                try:value=float(annotations['observed_value'])
+                except (ValueError,TypeError):raise ValueError('Invalid metric observation') from None
+                if not math.isfinite(value) or abs(value)>1e15:raise ValueError('Invalid metric observation')
+                data['observed_value']=value
             # Stable id across Alertmanager retries/restarts, but changes on new firing cycle.
             ident=digest([fingerprint,status,alert.get('startsAt'),alert.get('endsAt') if status=='resolved' else None])
             event=envelope('MonitoringAlert','alertmanager',self.service,data,correlation_id='alert-'+fingerprint,event_id=ident)
@@ -110,10 +126,12 @@ class EventHub:
             selector='probe_success{job="'+job+'",service="'+self.service+'"}'
             query=selector+' and ((time() - timestamp('+selector+')) < 30)'
             raw,_=ToolAdapter('prometheus',{'base_url':url}).request('/api/v1/query?'+urlencode({'query':query}))
-            values=json.loads(raw).get('data',{}).get('result',[])
+            response=json.loads(raw)
+            if response.get('status')!='success' or response.get('data',{}).get('resultType')!='vector':return None
+            values=response.get('data',{}).get('result',[])
             if not values:return None
-            return all(float(v['value'][1])==1 and time.time()-float(v['value'][0])<30 for v in values)
-        except (ValueError,TypeError,KeyError,OSError,RuntimeError):return None
+            return all(float(v['value'][1])==1 and 0<=time.time()-float(v['value'][0])<30 for v in values)
+        except (ValueError,TypeError,KeyError,IndexError,AttributeError,OSError,RuntimeError):return None
     def _save(self,db,incident):
         incident['revision']+=1
         db.execute('INSERT INTO incidents VALUES (?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET status=excluded.status,revision=excluded.revision,payload=excluded.payload',
@@ -192,6 +210,13 @@ class EventHub:
             elif action=='verify':
                 report=self.pilot.action('investigate');health=self.pilot.probe(self.pilot.health)
                 container_ok=not report.get('findings') and not report.get('snapshot',{}).get('errors')
+                observed=report.get('snapshot',{}).get('observations',{})
+                if incident.get('execution'):
+                    expected=incident.get('proposal',{}).get('data',{}).get('action',{}).get('argv',[])
+                    prior=incident.get('evidence',{}).get('snapshot',{}).get('observations',{})
+                    identity_ok=bool(expected and observed.get('id')==[expected[-1]] and prior.get('daemon_id') and observed.get('daemon_id')==prior['daemon_id'])
+                    container_ok=container_ok and identity_ok
+                incident['verification_evidence']=redact(report)
                 # Only explicitly supplied metrics are required. Error-rate criterion remains unknown if configured externally without evidence.
                 checks={'container':bool(container_ok),'prometheus':self.monitor_check() if incident['external_resolved'] else None}
                 result=verify(checks);result['checks']['http']=health.get('healthy')
@@ -207,6 +232,10 @@ class EventHub:
                 db.execute('BEGIN IMMEDIATE')
                 # Ingestion may append events while the operation is external; never drop those updates.
                 latest=self.get(incident['id']);incident['revision']=latest['revision'];incident['event_ids']=latest['event_ids'];incident['external_resolved']=latest['external_resolved']
+                incident['alert_states']=latest.get('alert_states',{})
+                if incident['status']=='verified' and not latest['external_resolved']:
+                    incident['status']='needs_attention';incident['verification']['status']='inconclusive'
+                    incident['verification']['checks']['prometheus']=None
                 self._save(db,incident);self._audit(db,incident['id'],actor,action+'_finished',{'plan_id':incident.get('plan_id'),'status':incident['status'],'error':incident.get('last_error'),'evidence_refs':incident.get('diagnosis',{}).get('data',{}).get('evidence_refs',[])})
         return incident
     def report(self,ident,after=0):

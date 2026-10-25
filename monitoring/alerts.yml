@@ -1,0 +1,24 @@
+groups:
+  - name: ops-pilot-owned-service
+    rules:
+      - alert: OpsPilotCPUHigh
+        expr: 100 * (1 - avg by(service, instance) (rate(node_cpu_seconds_total{mode="idle",service="owned-demo"}[2m]))) > 85
+        for: 10s
+        labels: {severity: warning, service: owned-demo}
+        annotations:
+          observed_value: '{{ $value }}'
+          summary: CPU usage exceeded the configured service policy
+      - alert: OpsPilotMemoryHigh
+        expr: 100 * (1 - node_memory_MemAvailable_bytes{service="owned-demo"} / node_memory_MemTotal_bytes{service="owned-demo"}) > 90
+        for: 10s
+        labels: {severity: warning, service: owned-demo}
+        annotations:
+          observed_value: '{{ $value }}'
+          summary: Available memory fell below the configured service policy
+      - alert: OpsPilotDiskFull
+        expr: 100 * (1 - node_filesystem_avail_bytes{service="owned-demo",mountpoint="/data"} / node_filesystem_size_bytes{service="owned-demo",mountpoint="/data"}) > 90
+        for: 10s
+        labels: {severity: critical, service: owned-demo}
+        annotations:
+          observed_value: '{{ $value }}'
+          summary: The explicitly selected filesystem is nearly full

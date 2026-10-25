@@ -25,6 +25,10 @@ class DiagnosticTests(unittest.TestCase):
         for tool, conf in [('kubernetes',{'context':'prod','namespace':'*','resource':'app'}),('aws',{'profile':'default','region':'us-east-1','resource':'all'}),('jenkins',{'resource':'app','base_url':'http://remote','password':'secret'}),('shell',{})]:
             self.write({'environment':'lab','tools':{tool:conf}})
             with self.assertRaises(ValueError):configuration(self.path)
+        import os
+        fifo=Path(self.temp.name)/'not-a-file'
+        os.mkfifo(fifo,0o600)
+        with self.assertRaises(ValueError):configuration(fifo)
 
     def test_wizard_creates_private_validated_profile_without_overwrite_or_connection(self):
         p=Path(self.temp.name)/'new.json'
@@ -57,6 +61,9 @@ class DiagnosticTests(unittest.TestCase):
         with self.assertRaises(ValueError):self.desk.collect('aws')
         with self.desk.connect() as db:
             with self.assertRaises(Exception):db.execute("DELETE FROM audit")
+        for error in (TypeError('invalid API shape'),KeyError('unavailable field'),IndexError('empty response')):
+            with patch.object(ToolAdapter,'collect',side_effect=error):
+                self.assertEqual(self.desk.collect('jenkins')['status'],'inconclusive')
 
     def test_jenkins_missing_build_identity_fails_closed_without_reading_a_console(self):
         with patch.object(ToolAdapter,'request',return_value=('{"building":false}',200)) as requests:
@@ -77,6 +84,7 @@ class DiagnosticTests(unittest.TestCase):
         with self.assertRaises(ValueError):self.desk.trivy({'artifact_digest':'latest','report':raw})
         with self.assertRaises(ValueError):self.desk.trivy({'artifact_digest':'sha256:'+'a'*64,'report':{}})
         with self.assertRaises(ValueError):self.desk.trivy({'artifact_digest':'sha256:'+'a'*64,'report':{'SchemaVersion':2,'Results':[{'Secrets':[{'Title':'sensitive'}]}]}})
+        with self.assertRaises(ValueError):self.desk.trivy({'artifact_digest':'sha256:'+'a'*64,'report':{'SchemaVersion':2,'Results':[{'Vulnerabilities':{}}]}})
 
     def test_environment_report_isolation(self):
         r=self.desk.trivy({'artifact_digest':'sha256:'+'a'*64,'report':{'SchemaVersion':2,'Results':[]}})

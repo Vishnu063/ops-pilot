@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import re
 import sqlite3
+import stat
 import threading
 import time
 import uuid
@@ -49,7 +50,7 @@ def wizard(path):
 
 def configuration(path):
     path = Path(path).expanduser()
-    if path.is_symlink() or path.stat().st_size > 16384 or path.stat().st_mode & 0o077:
+    if path.is_symlink() or not stat.S_ISREG(path.stat().st_mode) or path.stat().st_size > 16384 or path.stat().st_mode & 0o077:
         raise ValueError('Diagnostics configuration must be a private regular file, at most 16 KiB')
     value = json.loads(path.read_text())
     if not isinstance(value, dict) or set(value) != {'environment', 'tools'}:
@@ -153,7 +154,7 @@ class Diagnostics:
                 if tool == 'kubernetes':
                     report['k8sgpt'] = k8sgpt(adapter.config['context'], adapter.config['namespace'], os.environ.get('OPS_PILOT_K8SGPT') == '1')
                 annotate(report)
-            except (ValueError, RuntimeError, OSError):
+            except (ValueError, RuntimeError, OSError, TypeError, KeyError, IndexError, AttributeError):
                 report = dict(tool=tool, target=adapter.target, status='inconclusive', findings=[],
                               errors=['Read-only evidence unavailable; check scoped permissions, native tools and endpoint compatibility.'])
             # Never persist CLI stderr, raw manifests, console logs or credential configuration.
@@ -176,7 +177,8 @@ class Diagnostics:
                 raise ValueError('Invalid scanner result')
             if any(result.get(field) for field in ('Misconfigurations','Secrets','Licenses')):
                 raise ValueError('Import vulnerability-only reports; other scanner findings must not be silently discarded')
-            vulnerabilities = result.get('Vulnerabilities') or []
+            vulnerabilities = result.get('Vulnerabilities', [])
+            if vulnerabilities is None:vulnerabilities=[]
             if not isinstance(vulnerabilities, list) or len(vulnerabilities) > 1000:
                 raise ValueError('Scanner result exceeds bounds')
             for item in vulnerabilities:

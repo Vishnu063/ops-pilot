@@ -4,6 +4,7 @@ import json
 import sys
 import tempfile
 import threading
+from datetime import datetime, timezone
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from playwright.sync_api import sync_playwright,expect
 from triage.ecosystem import envelope
@@ -16,7 +17,7 @@ class Fixture:
  running=False
  def probe(self,policy):return {'healthy':self.running}
  def action(self,name,plan_id=None):
-  if name=='investigate':return {'snapshot':{'observations':{'state':['running' if self.running else 'exited']}},'findings':[] if self.running else [{'title':'Synthetic stopped state','likely_cause':'UI fixture only; no real Docker evidence'}]}
+  if name=='investigate':return {'snapshot':{'observations':{'id':['synthetic-owned-id'],'daemon_id':['synthetic-daemon'],'state':['running' if self.running else 'exited']}},'findings':[] if self.running else [{'title':'Synthetic stopped state','likely_cause':'UI fixture only; no real Docker evidence'}]}
   if name=='plan':return {'id':'synthetic-plan','command':['docker','--context','synthetic','restart','synthetic-owned-id'],'target':'synthetic-owned-id','risk':'Synthetic UI only','rollback':'No automatic rollback','verification':'Synthetic browser fixture; separate real recovery lab required'}
   if name=='apply':self.running=True;return {'status':'verified','infrastructure_status':'verified','application_health':{'healthy':True}}
   return {'status':'approved' if name=='approve' else 'cancelled'}
@@ -42,6 +43,7 @@ with tempfile.TemporaryDirectory() as directory:
    expect(page.locator('#message')).to_have_text('Saved: apply')
    expect(page.locator('#status')).to_contain_text('awaiting_monitoring')
    resolved=envelope('MonitoringAlert','alertmanager','demo',{'fingerprint':'ui-demo','alertname':'SyntheticAppDown','status':'resolved'},correlation_id='synthetic-ui')
+   resolved['timestamp']=datetime.now(timezone.utc).isoformat()
    hub.ingest(resolved,'alertmanager');page.get_by_role('button',name='Refresh',exact=True).click()
    page.get_by_role('button',name='Verify recovery',exact=True).click();expect(page.locator('#status')).to_contain_text('verified')
    page.set_viewport_size({'width':390,'height':844});page.screenshot(path=str(out/'ecosystem-mobile.png'),full_page=True)

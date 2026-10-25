@@ -64,6 +64,8 @@ jobs:
         run: docker exec -w /work ops-public-budget /opt/lab-venv/bin/python labs/ecosystem/acceptance.py --allow-disposable-host --cloudlaunch cloudlaunch --platform devops_platform --ops-pilot ops-pilot --output constrained-evidence
       - name: Real authenticated Jenkins pipeline and five Kubernetes failures
         run: docker exec -w /work -e OPS_PILOT_EXTENDED_LAB=owned-disposable-ci -e OPS_PILOT_LAB_OUTPUT=/work/extended-evidence ops-public-budget /opt/lab-venv/bin/python labs/ecosystem/extended.py
+      - name: Real resource pressure, Grafana and failed recovery with manual rollback
+        run: docker exec -w /work -e OPS_PILOT_RELIABILITY_LAB=owned-disposable-ci ops-public-budget /opt/lab-venv/bin/python ops-pilot/tests/reliability_acceptance.py
       - name: Record enclosing memory and OOM evidence
         if: always()
         run: |
@@ -72,6 +74,7 @@ jobs:
           docker exec ops-public-budget cat /sys/fs/cgroup/memory.events.local > budget-local-events.txt
           if [ -f constrained-evidence/result.json ]; then cat constrained-evidence/result.json; fi
           if [ -f extended-evidence/extended-result.json ]; then cat extended-evidence/extended-result.json; fi
+          if [ -f reliability-evidence/result.json ]; then cat reliability-evidence/result.json; fi
           cat budget.json budget-cgroup.txt budget-local-events.txt
       - name: Remove only this job's nested environment
         if: always()
@@ -86,6 +89,7 @@ jobs:
           path: |
             constrained-evidence/
             extended-evidence/
+            reliability-evidence/
             budget.json
             budget-cgroup.txt
             budget-local-events.txt
