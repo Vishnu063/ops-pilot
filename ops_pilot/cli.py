@@ -6,7 +6,7 @@ from .config import DEFAULT_CONFIG, DEFAULT_STATE, load, save
 
 def main():
     parser = argparse.ArgumentParser(description="Ops Pilot: one Docker app, reviewed repairs, verified health")
-    parser.add_argument("command", choices=("setup", "serve", "check", "freelance", "diagnostics"), nargs="?", default="serve")
+    parser.add_argument("command", choices=("setup", "serve", "check", "freelance", "diagnostics", "setup-diagnostics"), nargs="?", default="serve")
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     parser.add_argument("--state-dir", type=Path, default=DEFAULT_STATE)
     parser.add_argument("--port", type=int, default=8767)
@@ -16,6 +16,12 @@ def main():
     parser.add_argument("--tool", choices=('kubernetes','jenkins','aws','helm','argocd','prometheus','grafana'), help="One configured read-only collector")
     args = parser.parse_args()
     try:
+        if args.command == 'setup-diagnostics':
+            from .diagnostics import wizard
+            if args.diagnostics_config is None:
+                raise ValueError('Choose a private --diagnostics-config path')
+            wizard(args.diagnostics_config)
+            return 0
         if args.command == "setup":
             if args.config.expanduser().exists():
                 if input("Replace this application's configuration? Type replace: ").strip() != "replace":

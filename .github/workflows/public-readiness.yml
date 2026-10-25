@@ -47,6 +47,7 @@ jobs:
         run: |
           docker exec ops-public-budget sh -ec '
             apk add --no-cache python3 py3-pip git curl bash ca-certificates
+            git config --global --add safe.directory /work/cloudlaunch
             curl -fL --retry 2 https://github.com/kubernetes-sigs/kind/releases/download/v0.33.0/kind-linux-amd64 -o /usr/local/bin/kind
             curl -fL --retry 2 https://github.com/kubernetes-sigs/kind/releases/download/v0.33.0/kind-linux-amd64.sha256sum -o /tmp/kind.sha256
             cd /usr/local/bin

@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from ops_pilot.diagnostics import Diagnostics, configuration
+from ops_pilot.diagnostics import Diagnostics, configuration, wizard
 from triage.integrations import ToolAdapter
 
 
@@ -25,6 +25,14 @@ class DiagnosticTests(unittest.TestCase):
         for tool, conf in [('kubernetes',{'context':'prod','namespace':'*','resource':'app'}),('aws',{'profile':'default','region':'us-east-1','resource':'all'}),('jenkins',{'resource':'app','base_url':'http://remote','password':'secret'}),('shell',{})]:
             self.write({'environment':'lab','tools':{tool:conf}})
             with self.assertRaises(ValueError):configuration(self.path)
+
+    def test_wizard_creates_private_validated_profile_without_overwrite_or_connection(self):
+        p=Path(self.temp.name)/'new.json'
+        with patch('builtins.input',side_effect=['lab','kubernetes','kind-owned','owned','app']),patch.object(ToolAdapter,'collect',side_effect=AssertionError('No connection during setup')):
+            wizard(p)
+        self.assertEqual(configuration(p)['environment'],'lab')
+        self.assertEqual(p.stat().st_mode&0o777,0o600)
+        with self.assertRaises(ValueError):wizard(p)
 
     def test_numbered_jenkins_failure_logs_are_projected_and_cannot_repair(self):
         def request(adapter, path, *args):

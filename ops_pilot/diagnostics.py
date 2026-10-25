@@ -17,6 +17,36 @@ from triage.ecosystem import k8sgpt
 TOOLS = frozenset(('kubernetes', 'jenkins', 'aws', 'helm', 'argocd', 'prometheus', 'grafana'))
 
 
+def wizard(path):
+    """Create a new private profile without credentials, network access or overwrite."""
+    path = Path(path).expanduser()
+    if path.exists() or path.is_symlink():
+        raise ValueError('Diagnostics configuration already exists; review it locally rather than overwrite it')
+    print('Read-only diagnostics: configure only an environment you are authorized to inspect. No connection runs now.')
+    environment = input('Environment ID: ').strip()
+    tool = input('Collector (kubernetes, jenkins, aws, helm, argocd, prometheus, grafana): ').strip()
+    fields = {'kubernetes':('context','namespace','resource'), 'jenkins':('base_url','resource'),
+              'aws':('profile','region','resource'), 'helm':('context','namespace','resource'),
+              'argocd':('server','resource'), 'prometheus':('base_url',), 'grafana':('base_url',)}
+    if tool not in fields:
+        raise ValueError('Choose a documented read-only collector')
+    config = {name:input(name + ' (exact configured scope): ').strip() for name in fields[tool]}
+    print('Credentials use native CLI profiles or documented environment bindings; never paste tokens into this wizard.')
+    path.parent.mkdir(mode=0o700,parents=True,exist_ok=True)
+    import tempfile
+    descriptor, temporary = tempfile.mkstemp(dir=path.parent, prefix='.diagnostics-')
+    try:
+        with os.fdopen(descriptor,'w') as stream:
+            os.fchmod(stream.fileno(),0o600)
+            json.dump({'environment':environment,'tools':{tool:config}},stream,indent=2)
+        configuration(temporary)
+        # Hard-link creation is atomic and refuses a concurrent existing destination.
+        os.link(temporary,path)
+    finally:
+        os.unlink(temporary)
+    print('Saved privately. Add environment credential bindings if needed; then run diagnostics with --tool ' + tool)
+
+
 def configuration(path):
     path = Path(path).expanduser()
     if path.is_symlink() or path.stat().st_size > 16384 or path.stat().st_mode & 0o077:
