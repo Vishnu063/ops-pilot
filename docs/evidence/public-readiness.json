@@ -1,0 +1,172 @@
+{
+  "date": "2026-10-25",
+  "implementation_sha": "7e48a1619d0cb8d9908380a95c4e15ff116d75b1",
+  "ci": {
+    "standard": "https://github.com/Vishnu063/ops-pilot/actions/runs/40204417747",
+    "ecosystem": "https://github.com/Vishnu063/ops-pilot/actions/runs/40204417758",
+    "constrained": "https://github.com/Vishnu063/ops-pilot/actions/runs/40204417788"
+  },
+  "standard_tests": {
+    "jobs": 7,
+    "python_versions": [
+      "3.11",
+      "3.12",
+      "3.13"
+    ],
+    "unit_cases_per_version": 71,
+    "opt_in_docker_skips_in_matrix": 4,
+    "actual_docker_in_separate_job": true,
+    "browser": "Automated original, agency, ecosystem and diagnostics desktop/mobile; synthetic collectors; no manual screenshot acceptance claim",
+    "systemd": true,
+    "n8n": true
+  },
+  "extended": {
+    "synthetic": true,
+    "customer_changes": false,
+    "status": "passed",
+    "checks": [
+      "Actual Jenkins declarative linter accepted CloudLaunch Jenkinsfile; no deployment executed",
+      "Real authenticated Jenkins scripted pipeline failure and numbered console signature investigation",
+      "Real Kubernetes crash observed by native Ops Pilot diagnostics",
+      "Real Kubernetes image observed by native Ops Pilot diagnostics",
+      "Real Kubernetes oom observed by native Ops Pilot diagnostics",
+      "Real Kubernetes pending observed by native Ops Pilot diagnostics",
+      "Real Kubernetes rollout observed by native Ops Pilot diagnostics"
+    ],
+    "cleanup": true,
+    "memory_limit_bytes": 8000000000,
+    "enclosing_local_events_before": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    },
+    "cleanup_errors": [],
+    "elapsed_seconds": 136.623,
+    "enclosing_cgroup_peak_bytes": 4151042048,
+    "enclosing_local_events_after": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    },
+    "enclosing_budget_oom_free": true
+  },
+  "recovery": {
+    "status": "passed",
+    "synthetic": true,
+    "customer_changes": false,
+    "stages": [
+      {
+        "stage": "CloudLaunch sample deployed",
+        "elapsed_seconds": 10.872,
+        "release_id": "887130a843eedceec7b46a1c3e3f066800e6ce06",
+        "image_id": "sha256:01a7e48ad74e263bea9b7899ce12fb2a3b4991ffd07df5317dcb2f127d6aa0df"
+      },
+      {
+        "stage": "Monitoring observes healthy sample",
+        "elapsed_seconds": 19.328
+      },
+      {
+        "stage": "Owned test application stopped",
+        "elapsed_seconds": 22.472
+      },
+      {
+        "stage": "Prometheus alert received by Ops Pilot",
+        "elapsed_seconds": 26.542,
+        "incident_id": "276b0768cf58c9c606494526"
+      },
+      {
+        "stage": "Real firing alert confirmed",
+        "elapsed_seconds": 26.554
+      },
+      {
+        "stage": "Source/read credentials cannot authorize and failed verification remains failed",
+        "elapsed_seconds": 34.85
+      },
+      {
+        "stage": "Real native Docker evidence and deterministic diagnosis collected",
+        "elapsed_seconds": 39.031
+      },
+      {
+        "stage": "Exact backend restart proposal created",
+        "elapsed_seconds": 39.151
+      },
+      {
+        "stage": "No repair before approval verified",
+        "elapsed_seconds": 39.176
+      },
+      {
+        "stage": "Owner approved exact incident plan",
+        "elapsed_seconds": 39.284
+      },
+      {
+        "stage": "Allowlisted repair executed; container and HTTP verified",
+        "elapsed_seconds": 43.857
+      },
+      {
+        "stage": "HTTP, actual metrics and alert resolution verified",
+        "elapsed_seconds": 46.054,
+        "recovery_seconds": 19.739
+      },
+      {
+        "stage": "Correlated incident report and audit exported",
+        "elapsed_seconds": 46.086
+      },
+      {
+        "stage": "Platform read-only incident view verified",
+        "elapsed_seconds": 46.115
+      }
+    ],
+    "passed_stages": 14,
+    "main_process_peak_rss_kib": 40196,
+    "elapsed_seconds": 46.115,
+    "limits": "No claim that the entire optional stack fits in 8 GB; Grafana/Jenkins/Kind/K8sGPT not started",
+    "cleanup_verified": true
+  },
+  "docker_outer_state": {
+    "oom_killed": true,
+    "running": true,
+    "exit_code": 0,
+    "interpretation": "Hierarchical descendant OOM flag during the intentionally constrained Kubernetes OOM fault; enclosing memory.events.local counters stayed zero."
+  },
+  "source_refs": {
+    "cloudlaunch": "887130a843eedceec7b46a1c3e3f066800e6ce06",
+    "devops_platform": "8af78e65e6a0b6ed3687177c39b09ad8a0f32bc7",
+    "labs": "7e68ff820049deddccd2f086d0e15e49dd56aec1",
+    "triage": "d00b4fa5b861bd8a24935725300fe1d0a0ac538a"
+  },
+  "limits": [
+    "Sequential service phases, not a full concurrent production stack capacity guarantee",
+    "Grafana, external AWS/ArgoCD/Helm/K8sGPT/providers/models not started in constrained acceptance",
+    "No pharmacy/customer deployment or actual Trivy vulnerability clearance",
+    "No public-facing or multi-user acceptance",
+    "Owner license/attribution decision remains necessary before public redistribution of repositories without a detected root license; n8n/model/provider terms are separate."
+  ],
+  "resolved_failures": [
+    {
+      "run": 40177636539,
+      "cause": "Nested checkout Git ownership protection; exact owned safe.directory configured"
+    },
+    {
+      "run": 40177748734,
+      "cause": "Navigation mobile overflow fixed; HTTP test helper accepts text error bodies"
+    },
+    {
+      "run": 40178242288,
+      "cause": "Kubernetes collector missed repeated exits between waiting states; native bounded repeated-exit evidence added with historical-failure guards"
+    },
+    {
+      "run": 40178242303,
+      "cause": "Browser polling helper incompatible with CSP; switched helper without relaxing CSP"
+    },
+    {
+      "run": 40178809581,
+      "cause": "Jenkins validation expects a form field; corrected multipart harness"
+    }
+  ]
+}

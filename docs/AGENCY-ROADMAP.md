@@ -63,3 +63,7 @@ Updated 2026-10-24 (Asia/Kolkata). Status refers to the stated repository scope,
 The five-project incident integration is optional and preserves the 50-step agency work above. [Completion record](ECOSYSTEM-RESULTS.md) and [repository evidence](evidence/ecosystem-repositories.json) distinguish the verified disposable Docker path from external acceptance gates. Real monitoring, exact owner approval, refused preapproval/replay, native restart, metric/HTTP/resolution checks and cleanup passed. Audit exports are paginated so long histories are not silently omitted.
 
 Next gates remain actual Jenkins/Trivy, customer authorization, cluster/GitOps/Helm/K8sGPT and resource-alert runtime checks, optional Grafana/log backend provisioning, and measurement of the full optional stack on an 8 GB host. These are not complete customer services.
+
+## Public self-hosted follow-on review (2026-10-25)
+
+Merged ecosystem PR #5 stays merged. New PR #6 adds optional native read-only diagnostics, a private setup wizard, bounded reports/HTTP concurrency and constrained real-failure acceptance; see [readiness evidence](PUBLIC-READINESS.md). The existing 50-step agency records remain intact. Multi-user/public exposure, external cloud/provider access, concurrent production capacity and customer acceptance remain gated by their own evidence.

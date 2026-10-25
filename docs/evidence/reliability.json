@@ -1,0 +1,166 @@
+{
+  "date": "2026-10-25",
+  "observed_implementation": "7d6439ac583f20d4ea2b7b014ecbc64579afb473",
+  "constrained_run": "https://github.com/Vishnu063/ops-pilot/actions/runs/40211776518",
+  "results": [
+    {
+      "synthetic": true,
+      "customer_changes": false,
+      "status": "passed",
+      "checks": [
+        "Actual Jenkins declarative linter accepted CloudLaunch Jenkinsfile; no deployment executed",
+        "Real authenticated Jenkins scripted pipeline failure and numbered console signature investigation",
+        "Real Kubernetes crash observed by native Ops Pilot diagnostics",
+        "Real Kubernetes image observed by native Ops Pilot diagnostics",
+        "Real Kubernetes oom observed by native Ops Pilot diagnostics",
+        "Real Kubernetes pending observed by native Ops Pilot diagnostics",
+        "Real Kubernetes rollout observed by native Ops Pilot diagnostics"
+      ],
+      "cleanup": true,
+      "memory_limit_bytes": 8000000000,
+      "enclosing_local_events_before": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      },
+      "cleanup_errors": [],
+      "elapsed_seconds": 130.742,
+      "enclosing_cgroup_peak_bytes": 4188807168,
+      "enclosing_local_events_after": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      },
+      "enclosing_budget_oom_free": true
+    },
+    {
+      "status": "passed",
+      "synthetic": true,
+      "customer_changes": false,
+      "checks": [
+        "Real bounded CPU pressure -> Prometheus -> authenticated Alertmanager -> incident/evidence/report",
+        "Real bounded memory pressure -> alert/incident; lab threshold 70%, production example 90%",
+        "Actual ENOSPC on an owned 8 MiB tmpfs -> disk alert/incident; host filesystem untouched",
+        "Resource alerts never authorize or run a restart",
+        "Real Grafana authenticated health, imported Platform dashboard and live Prometheus datasource health",
+        "Real failed approved restart -> needs_attention -> replay refusal -> separately scoped manual owned rollback -> consecutive healthy HTTP"
+      ],
+      "cleanup": true,
+      "resource_fixture_projection": "Real cgroup CPU/memory and tmpfs usage projected into node-style metric series by a CI-only fixture, not a deployed production node exporter.",
+      "grafana_dashboard_uid": "devops-ecosystem",
+      "cleanup_errors": [],
+      "elapsed_seconds": 61.719,
+      "memory_limit_bytes": 8000000000,
+      "memory_peak_bytes": 4188807168,
+      "enclosing_local_memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      }
+    },
+    {
+      "status": "passed",
+      "synthetic": true,
+      "customer_changes": false,
+      "stages": [
+        {
+          "stage": "CloudLaunch sample deployed",
+          "elapsed_seconds": 7.318,
+          "release_id": "887130a843eedceec7b46a1c3e3f066800e6ce06",
+          "image_id": "sha256:4a07389b4471f8986f3d4c1d2a29ead61cf03dfc1e173117bcc80b043d084a93"
+        },
+        {
+          "stage": "Monitoring observes healthy sample",
+          "elapsed_seconds": 15.759
+        },
+        {
+          "stage": "Owned test application stopped",
+          "elapsed_seconds": 18.892
+        },
+        {
+          "stage": "Prometheus alert received by Ops Pilot",
+          "elapsed_seconds": 22.96,
+          "incident_id": "09079251ea6c57adf2f7c9dd"
+        },
+        {
+          "stage": "Real firing alert confirmed",
+          "elapsed_seconds": 22.973
+        },
+        {
+          "stage": "Source/read credentials cannot authorize and failed verification remains failed",
+          "elapsed_seconds": 31.271
+        },
+        {
+          "stage": "Real native Docker evidence and deterministic diagnosis collected",
+          "elapsed_seconds": 35.471
+        },
+        {
+          "stage": "Exact backend restart proposal created",
+          "elapsed_seconds": 35.58
+        },
+        {
+          "stage": "No repair before approval verified",
+          "elapsed_seconds": 35.608
+        },
+        {
+          "stage": "Owner approved exact incident plan",
+          "elapsed_seconds": 35.716
+        },
+        {
+          "stage": "Allowlisted repair executed; container and HTTP verified",
+          "elapsed_seconds": 40.266
+        },
+        {
+          "stage": "HTTP, actual metrics and alert resolution verified",
+          "elapsed_seconds": 42.475,
+          "recovery_seconds": 19.705
+        },
+        {
+          "stage": "Correlated incident report and audit exported",
+          "elapsed_seconds": 42.508
+        },
+        {
+          "stage": "Platform read-only incident view verified",
+          "elapsed_seconds": 42.54
+        }
+      ],
+      "passed_stages": 14,
+      "main_process_peak_rss_kib": 41564,
+      "elapsed_seconds": 42.54,
+      "limits": "No claim that the entire optional stack fits in 8 GB; Grafana/Jenkins/Kind/K8sGPT not started",
+      "cleanup_verified": true
+    }
+  ],
+  "scope": "Eleven checks passed on this implementation. Subsequent documentation-only commits must pass their own checks before merge. Sequential isolated owned fixtures, no customer changes; not concurrent production sizing or generic production rollback.",
+  "pending_external": [
+    "AWS/account access",
+    "ArgoCD/Helm runtime",
+    "Actual configured K8sGPT/provider/model",
+    "Production exporters and pharmacy/Trivy runtime",
+    "Public/multi-user deployment and concurrent production capacity",
+    "Owner distribution-license decisions"
+  ],
+  "standard_run": "https://github.com/Vishnu063/ops-pilot/actions/runs/40211776550",
+  "ecosystem_run": "https://github.com/Vishnu063/ops-pilot/actions/runs/40211776537",
+  "security_run": "https://github.com/Vishnu063/ops-pilot/actions/runs/40211776534",
+  "checks": {
+    "jobs_passed": 11,
+    "cases_per_python_version": 79,
+    "python_versions": [
+      "3.11",
+      "3.12",
+      "3.13"
+    ],
+    "docker_opt_in_skips_per_version": 4,
+    "docker_tested_separately": true
+  }
+}

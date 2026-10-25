@@ -6,14 +6,22 @@ from .config import DEFAULT_CONFIG, DEFAULT_STATE, load, save
 
 def main():
     parser = argparse.ArgumentParser(description="Ops Pilot: one Docker app, reviewed repairs, verified health")
-    parser.add_argument("command", choices=("setup", "serve", "check", "freelance"), nargs="?", default="serve")
+    parser.add_argument("command", choices=("setup", "serve", "check", "freelance", "diagnostics", "setup-diagnostics"), nargs="?", default="serve")
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     parser.add_argument("--state-dir", type=Path, default=DEFAULT_STATE)
     parser.add_argument("--port", type=int, default=8767)
     parser.add_argument("--ai-model", help="Optional installed local Ollama model. Advisory only; no auto download.")
     parser.add_argument("--ecosystem-service",help="Opt in to the event inbox for this exact service ID; source/read tokens come from private environment variables")
+    parser.add_argument("--diagnostics-config", type=Path, help="Private read-only environment configuration; no credentials in JSON")
+    parser.add_argument("--tool", choices=('kubernetes','jenkins','aws','helm','argocd','prometheus','grafana'), help="One configured read-only collector")
     args = parser.parse_args()
     try:
+        if args.command == 'setup-diagnostics':
+            from .diagnostics import wizard
+            if args.diagnostics_config is None:
+                raise ValueError('Choose a private --diagnostics-config path')
+            wizard(args.diagnostics_config)
+            return 0
         if args.command == "setup":
             if args.config.expanduser().exists():
                 if input("Replace this application's configuration? Type replace: ").strip() != "replace":
@@ -30,8 +38,18 @@ def main():
             raise ValueError("Choose a port between 1024 and 65535")
         from .freelance import Workspace
         from .web import run
+        diagnostics = None
+        if args.diagnostics_config:
+            from .diagnostics import Diagnostics
+            diagnostics = Diagnostics(args.diagnostics_config, args.state_dir)
+        if args.command == 'diagnostics':
+            if diagnostics is None or args.tool is None:
+                raise ValueError('Use --diagnostics-config and --tool; configure explicit read-only scopes first')
+            report = diagnostics.collect(args.tool)
+            print(json.dumps(report, indent=2))
+            return 2 if report['status'] == 'inconclusive' else 1 if report['status'] == 'findings' else 0
         if args.command == 'freelance':
-            run(None, args.port, Workspace(args.state_dir))
+            run(None, args.port, Workspace(args.state_dir), diagnostics=diagnostics)
             return 0
         from .service import Pilot
         config, _ = load(args.config)
@@ -45,7 +63,7 @@ def main():
         if args.ecosystem_service:
             from .ecosystem import EventHub
             hub=EventHub(pilot,args.state_dir,args.ecosystem_service)
-        run(pilot, args.port, Workspace(args.state_dir), hub)
+        run(pilot, args.port, Workspace(args.state_dir), hub, diagnostics)
         return 0
     except (ValueError, RuntimeError, OSError, EOFError) as exc:
         print("Ops Pilot could not continue:", str(exc))

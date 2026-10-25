@@ -2,7 +2,8 @@ import json
 import tempfile
 from types import SimpleNamespace
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
+from datetime import datetime, timezone, timedelta
 from triage.ecosystem import envelope
 from ops_pilot.ecosystem import EventHub
 
@@ -11,7 +12,8 @@ class EventHubTests(unittest.TestCase):
   self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup)
   self.pilot=SimpleNamespace(config={'name':'demo','container':'owned'},health={'url':'http://127.0.0.1:8080'},action=Mock())
   self.hub=EventHub(self.pilot,self.tmp.name,'demo')
- def event(self,status='firing',ident=None):return envelope('MonitoringAlert','alertmanager','demo',{'fingerprint':'fp1','status':status,'alertname':'AppDown'},event_id=ident,correlation_id='release-1')
+ def event(self,status='firing',ident=None):
+  event=envelope('MonitoringAlert','alertmanager','demo',{'fingerprint':'fp1','status':status,'alertname':'AppDown'},event_id=ident,correlation_id='release-1');event['timestamp']=datetime.now(timezone.utc).isoformat();return event
  def test_source_scope_capabilities_and_stable_dedup_survive_restart(self):
   e=self.event();a=self.hub.ingest(e,'alertmanager');self.assertFalse(a['duplicate']);self.assertTrue(self.hub.ingest(e,'alertmanager')['duplicate'])
   other=EventHub(self.pilot,self.tmp.name,'demo');self.assertTrue(other.ingest(e,'alertmanager')['duplicate'])
@@ -31,6 +33,63 @@ class EventHubTests(unittest.TestCase):
   forged=envelope('ApprovalDecision','alertmanager','demo',{'incident_id':incident,'plan_id':'arbitrary','decision':'approve','actor':'forged'})
   with self.assertRaises(ValueError):self.hub.ingest(forged,'alertmanager')
   self.pilot.action.assert_not_called()
+ def test_new_firing_and_out_of_order_resolution_cannot_reuse_old_recovery(self):
+  base=datetime.now(timezone.utc)-timedelta(seconds=20)
+  def emit(status,second,source='alertmanager'):
+   event=self.event(status);event['timestamp']=(base+timedelta(seconds=second)).isoformat();event['source']=source
+   return self.hub.ingest(event,source)['incident_id']
+  ident=emit('firing',0);emit('resolved',5);self.assertTrue(self.hub.get(ident)['external_resolved'])
+  emit('firing',10);emit('resolved',6);self.assertFalse(self.hub.get(ident)['external_resolved'])
+  emit('resolved',12,'labs');self.assertFalse(self.hub.get(ident)['external_resolved'])
+  emit('resolved',15);emit('firing',10);self.assertTrue(self.hub.get(ident)['external_resolved'])
+ def test_replacement_or_daemon_change_during_post_repair_verification_is_not_recovery(self):
+  for observed_id,daemon in [('b'*64,'daemon-a'),('a'*64,'daemon-b')]:
+   ident=self.hub.ingest(self.event(),'alertmanager')['incident_id'];self.hub.ingest(self.event('resolved'),'alertmanager')
+   incident=self.hub.get(ident);incident.update(status='awaiting_monitoring',execution={'status':'verified'},plan_id='bound-plan',
+    evidence={'snapshot':{'observations':{'daemon_id':['daemon-a']}}},proposal={'data':{'action':{'argv':['docker','restart','a'*64]}}})
+   with self.hub.connect() as db:self.hub._save(db,incident)
+   self.pilot.action.return_value={'findings':[],'snapshot':{'errors':[],'observations':{'id':[observed_id],'daemon_id':[daemon]}}}
+   self.pilot.probe=lambda policy:{'healthy':True};self.hub.monitor_check=lambda:True
+   result=self.hub.action(dict(incident_id=ident,revision=incident['revision'],action='verify',plan_id=None))
+   self.assertEqual('needs_attention',result['status']);self.assertEqual('failed',result['verification']['status'])
+ def test_firing_arriving_while_health_is_checked_prevents_terminal_closure(self):
+  ident=self.hub.ingest(self.event(),'alertmanager')['incident_id'];self.hub.ingest(self.event('resolved'),'alertmanager')
+  incident=self.hub.get(ident);self.pilot.action.return_value={'findings':[],'snapshot':{'errors':[]}}
+  def probe(policy):self.hub.ingest(self.event(),'alertmanager');return {'healthy':True}
+  self.pilot.probe=probe;self.hub.monitor_check=lambda:True
+  result=self.hub.action(dict(incident_id=ident,revision=incident['revision'],action='verify',plan_id=None))
+  self.assertEqual('needs_attention',result['status']);self.assertEqual('inconclusive',result['verification']['status'])
+ def test_prometheus_response_requires_typed_success_and_fresh_nonfuture_samples(self):
+  self.hub.prom_url='http://127.0.0.1:19090'
+  import time
+  for offset,expected in [(-5,True),(60,False),(-60,False)]:
+   raw=json.dumps({'status':'success','data':{'resultType':'vector','result':[{'value':[time.time()+offset,'1']}]}})
+   with patch('ops_pilot.ecosystem.ToolAdapter.request',return_value=(raw,200)):self.assertIs(expected,self.hub.monitor_check())
+  with patch('ops_pilot.ecosystem.ToolAdapter.request',return_value=('{"status":"error","data":{"result":[]}}',200)):self.assertIsNone(self.hub.monitor_check())
+ def test_legacy_resolved_boolean_without_current_alert_state_is_insufficient(self):
+  self.assertFalse(self.hub.resolution_confirmed({'external_resolved':True}))
+ def test_metric_annotations_are_numeric_and_malformed_service_payloads_are_refused(self):
+  stamp=datetime.now(timezone.utc).isoformat()
+  alert=dict(labels={'service':'demo','alertname':'CPUHigh'},fingerprint='metric',status='firing',startsAt=stamp,annotations={'observed_value':'96.2'})
+  ident=self.hub.alertmanager({'alerts':[alert]})['results'][0]['incident_id']
+  self.assertEqual(96.2,self.hub.get(ident)['trigger']['data']['observed_value'])
+  for bad in [None,{'labels':None},{**alert,'annotations':{'observed_value':'NaN'}}]:
+   with self.assertRaises(ValueError):self.hub.alertmanager({'alerts':[bad]})
+ def test_broken_optional_analyzer_does_not_discard_native_evidence(self):
+  ident=self.hub.ingest(self.event(),'alertmanager')['incident_id'];incident=self.hub.get(ident)
+  self.pilot.action.return_value={'findings':[{'title':'Observed stopped container','likely_cause':'Unknown underlying cause'}],'snapshot':{'observations':{'state':['exited']}}}
+  with patch('ops_pilot.diagnostics.k8sgpt',side_effect=ValueError('invalid analyzer JSON')):
+   result=self.hub.action(dict(incident_id=ident,revision=incident['revision'],action='investigate',plan_id=None))
+  self.assertEqual('diagnosed',result['status']);self.assertEqual('inconclusive',result['k8sgpt']['status'])
+  self.assertTrue(result['evidence']['findings']);self.assertEqual(1,self.pilot.action.call_count)
+ def test_metric_updates_are_distinct_but_identical_webhook_retries_are_idempotent(self):
+  alert=dict(labels={'service':'demo','alertname':'CPUHigh'},fingerprint='metric-update',status='firing',startsAt=datetime.now(timezone.utc).isoformat(),annotations={'observed_value':'96.2'})
+  first=self.hub.alertmanager({'alerts':[alert]})['results'][0]
+  retry=self.hub.alertmanager({'alerts':[alert]})['results'][0];self.assertTrue(retry['duplicate'])
+  alert['annotations']['observed_value']='97.1'
+  update=self.hub.alertmanager({'alerts':[alert]})['results'][0]
+  self.assertEqual(first['incident_id'],update['incident_id'])
+  with self.hub.connect() as db:self.assertEqual(2,db.execute('SELECT count(*) FROM incoming').fetchone()[0])
  def test_apply_without_approval_and_stale_revisions_are_refused(self):
   ident=self.hub.ingest(self.event(),'alertmanager')['incident_id'];current=self.hub.get(ident)
   with self.assertRaises(ValueError):self.hub.action(dict(incident_id=ident,revision=current['revision'],action='apply',plan_id=None))

@@ -1,0 +1,95 @@
+name: Public self-hosted readiness
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: public-readiness-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  constrained-failures:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: ops-pilot
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: Vishnu063/cloudlaunch
+          ref: 887130a843eedceec7b46a1c3e3f066800e6ce06
+          path: cloudlaunch
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: Vishnu063/devops_platform
+          ref: 8af78e65e6a0b6ed3687177c39b09ad8a0f32bc7
+          path: devops_platform
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: Vishnu063/devops-troubleshooting-labs
+          ref: 7e68ff820049deddccd2f086d0e15e49dd56aec1
+          path: labs
+          persist-credentials: false
+      - name: Start isolated nested daemon under an enforced 8 GB ceiling
+        run: |
+          docker run -d --name ops-public-budget --label io.ops-pilot.public-lab=true --privileged --cgroupns=private --memory=8000000000 --memory-swap=8000000000 --cpus=2 --mount "type=bind,src=$GITHUB_WORKSPACE,dst=/work" docker:28-dind dockerd --host=unix:///var/run/docker.sock --storage-driver=overlay2
+          for attempt in $(seq 1 60); do
+            if docker exec ops-public-budget docker info >/dev/null 2>&1; then break; fi
+            sleep 1
+          done
+          test "$(docker inspect --format '{{.HostConfig.Memory}}' ops-public-budget)" = 8000000000
+          docker exec ops-public-budget sh -c 'test "$(cat /sys/fs/cgroup/memory.max)" = 8000000000; docker info >/dev/null'
+      - name: Install only disposable lab tools
+        run: |
+          docker exec ops-public-budget sh -ec '
+            apk add --no-cache python3 py3-pip git curl bash ca-certificates
+            git config --global --add safe.directory /work/cloudlaunch
+            curl -fL --retry 2 https://github.com/kubernetes-sigs/kind/releases/download/v0.33.0/kind-linux-amd64 -o /usr/local/bin/kind
+            curl -fL --retry 2 https://github.com/kubernetes-sigs/kind/releases/download/v0.33.0/kind-linux-amd64.sha256sum -o /tmp/kind.sha256
+            cd /usr/local/bin
+            sed "s/kind-linux-amd64/kind/" /tmp/kind.sha256 | sha256sum -c -
+            chmod +x kind
+            curl -fL --retry 2 https://dl.k8s.io/release/v1.35.0/bin/linux/amd64/kubectl -o kubectl
+            curl -fL --retry 2 https://dl.k8s.io/release/v1.35.0/bin/linux/amd64/kubectl.sha256 -o /tmp/kubectl.sha256
+            echo "$(cat /tmp/kubectl.sha256)  kubectl" | sha256sum -c -
+            chmod +x kubectl
+            python3 -m venv /opt/lab-venv
+            /opt/lab-venv/bin/pip install /work/ops-pilot
+          '
+      - name: Real five-project monitoring, refused repair, approval, recovery and report
+        run: docker exec -w /work ops-public-budget /opt/lab-venv/bin/python labs/ecosystem/acceptance.py --allow-disposable-host --cloudlaunch cloudlaunch --platform devops_platform --ops-pilot ops-pilot --output constrained-evidence
+      - name: Real authenticated Jenkins pipeline and five Kubernetes failures
+        run: docker exec -w /work -e OPS_PILOT_EXTENDED_LAB=owned-disposable-ci -e OPS_PILOT_LAB_OUTPUT=/work/extended-evidence ops-public-budget /opt/lab-venv/bin/python labs/ecosystem/extended.py
+      - name: Real resource pressure, Grafana and failed recovery with manual rollback
+        run: docker exec -w /work -e OPS_PILOT_RELIABILITY_LAB=owned-disposable-ci ops-public-budget /opt/lab-venv/bin/python ops-pilot/tests/reliability_acceptance.py
+      - name: Record enclosing memory and OOM evidence
+        if: always()
+        run: |
+          docker inspect --format '{"memory_limit_bytes":{{.HostConfig.Memory}},"oom_killed":{{.State.OOMKilled}},"running":{{.State.Running}},"exit_code":{{.State.ExitCode}}}' ops-public-budget > budget.json
+          docker exec ops-public-budget sh -c 'cat /sys/fs/cgroup/memory.peak; cat /sys/fs/cgroup/memory.events' > budget-cgroup.txt
+          docker exec ops-public-budget cat /sys/fs/cgroup/memory.events.local > budget-local-events.txt
+          if [ -f constrained-evidence/result.json ]; then cat constrained-evidence/result.json; fi
+          if [ -f extended-evidence/extended-result.json ]; then cat extended-evidence/extended-result.json; fi
+          if [ -f reliability-evidence/result.json ]; then cat reliability-evidence/result.json; fi
+          cat budget.json budget-cgroup.txt budget-local-events.txt
+      - name: Remove only this job's nested environment
+        if: always()
+        run: |
+          if [ "$(docker inspect --format '{{index .Config.Labels "io.ops-pilot.public-lab"}}' ops-public-budget 2>/dev/null)" = true ]; then docker rm -f -v ops-public-budget; fi
+          test -z "$(docker ps -aq --filter name=^/ops-public-budget$)"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: public-readiness-evidence
+          retention-days: 30
+          path: |
+            constrained-evidence/
+            extended-evidence/
+            reliability-evidence/
+            budget.json
+            budget-cgroup.txt
+            budget-local-events.txt

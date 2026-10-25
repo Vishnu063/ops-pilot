@@ -79,6 +79,7 @@ jobs:
           python tests/browser_acceptance.py
           python tests/freelance_browser.py
           python tests/ecosystem_browser.py
+          python tests/diagnostics_browser.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -86,6 +87,7 @@ jobs:
           path: |
             browser-evidence/
             freelance-evidence/
+            diagnostic-evidence/
           if-no-files-found: ignore
           retention-days: 30
   service-lab:

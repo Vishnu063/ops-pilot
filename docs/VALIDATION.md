@@ -156,3 +156,17 @@ before running tests because Playwright 1.58.0 does not support the new Ubuntu
 26.04 runner. The browser job is now pinned to Ubuntu 24.04; consult PR checks
 for the subsequent result. The local original and freelance browser flows passed.
 Detailed limits are recorded in [FREELANCE-VALIDATION.md](FREELANCE-VALIDATION.md).
+
+
+## Self-hosted diagnostics follow-on — 2026-10-25
+
+Implementation `7e48a1619d0cb8d9908380a95c4e15ff116d75b1` passed [all seven standard jobs](https://github.com/Vishnu063/ops-pilot/actions/runs/40204417747), [both ecosystem jobs](https://github.com/Vishnu063/ops-pilot/actions/runs/40204417758) and [strict 8 GB real Jenkins/Kind acceptance](https://github.com/Vishnu063/ops-pilot/actions/runs/40204417788). The Python matrix ran 71 cases per version (3.11/3.12/3.13), with four explicit Docker skips tested separately in the real Docker job. The installed Docker and read-only setup wizards, owner/session/Origin boundaries, Trivy import, original/new automated browsers, n8n and systemd passed. No manual review of new browser screenshots is claimed.
+
+Peak enclosing memory was 4,151,042,048 bytes with zero local enclosing limit/OOM events under the enforced 8,000,000,000-byte ceiling. The intentionally OOM-killed child workload raised hierarchical/Docker OOM indicators; the controller remained running. Both practice phases verified cleanup. Sequential phases exclude Grafana/models/providers and do not establish full concurrent production capacity. [Genuine result JSON](evidence/public-readiness.json) and [full review/limitations](PUBLIC-READINESS.md) distinguish these outcomes from prepared or external features. Local socket-dependent tests were blocked by this execution sandbox; their real CI outcomes are linked above.
+
+
+## Final implementation verification
+
+Implementation `7d6439ac583f20d4ea2b7b014ecbc64579afb473` passed all **11 CI jobs**: [seven standard jobs](https://github.com/Vishnu063/ops-pilot/actions/runs/40211776550), [two ecosystem jobs](https://github.com/Vishnu063/ops-pilot/actions/runs/40211776537), [constrained failure acceptance](https://github.com/Vishnu063/ops-pilot/actions/runs/40211776518), and [source security](https://github.com/Vishnu063/ops-pilot/actions/runs/40211776534). Python 3.11/3.12/3.13 each ran 79 cases, with four opt-in skips exercised in the separate real Docker job. Authenticated n8n, systemd and desktop/mobile automated browser checks passed; new screenshots have not received manual visual acceptance.
+
+The sequential Jenkins/Kind, five-project recovery, resource/Grafana and manual rollback phases passed under an enforced 8,000,000,000-byte limit. Peak enclosing memory was **4,188,807,168 bytes**, with zero enclosing local limit/OOM events and verified cleanup. The intentional child OOM set the hierarchical Docker OOM flag while its controller remained running. The resource fixture uses actual cgroup pressure and an owned 8 MiB tmpfs; its node-style metrics are CI projections. Grafana dashboard import, datasource health and authenticated proxy query passed. Failed approved recovery stayed `needs_attention`; a separately scoped manual procedure restored an already verified good fixture. No generic production replacement/rollback executor is claimed. Raw summaries and exact source/run links are in [reliability evidence](evidence/reliability.json). Subsequent documentation-only commits must pass their own checks before merge.
