@@ -137,7 +137,7 @@ class Diagnostics:
                         report['deep_evidence']['errors'].append('Bounded Helm release history unavailable')
                 if tool == 'jenkins':
                     # Read the numbered build collected above, not a moving lastBuild console.
-                    number = snapshot['observations'].get('number', [None])[0]
+                    number = (snapshot['observations'].get('number') or [None])[0]
                     if type(number) is not int or number < 1:
                         raise ValueError('Jenkins build identity is unavailable')
                     try:
@@ -174,6 +174,8 @@ class Diagnostics:
         for result in raw['Results']:
             if not isinstance(result, dict):
                 raise ValueError('Invalid scanner result')
+            if any(result.get(field) for field in ('Misconfigurations','Secrets','Licenses')):
+                raise ValueError('Import vulnerability-only reports; other scanner findings must not be silently discarded')
             vulnerabilities = result.get('Vulnerabilities') or []
             if not isinstance(vulnerabilities, list) or len(vulnerabilities) > 1000:
                 raise ValueError('Scanner result exceeds bounds')

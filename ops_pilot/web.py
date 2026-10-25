@@ -126,7 +126,10 @@ class Handler(BaseHTTPRequestHandler):
             if desk is None:
                 return self.send(200, {'connected': False, 'reason': 'Read-only diagnostics are not configured'})
             try:
-                return self.send(200, desk.state() if url.path.endswith('/state') else desk.report(parse_qs(url.query).get('id', [''])[0]))
+                if url.path.endswith('/state'):
+                    return self.send(200, desk.state())
+                report = desk.report(parse_qs(url.query).get('id', [''])[0])
+                return self.send(200, report, headers={'Content-Disposition':'attachment; filename="ops-pilot-diagnostic-'+report['id']+'.json"'})
             except ValueError:
                 return self.send(404, {'error': 'Diagnostic report not found in this environment'})
         if url.path == '/ecosystem':

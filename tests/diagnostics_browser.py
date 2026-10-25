@@ -4,7 +4,7 @@ from pathlib import Path
 import tempfile
 import threading
 from unittest.mock import patch
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, expect
 from ops_pilot.diagnostics import Diagnostics
 from ops_pilot.web import Server
 from triage.integrations import ToolAdapter
@@ -26,13 +26,13 @@ def main():
                 errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
                 page.goto(base+'/login?token='+server.token);page.goto(base+'/diagnostics')
                 page.get_by_role('button',name='Collect evidence',exact=True).click()
-                page.wait_for_function("document.getElementById('report').textContent.includes('jenkins:result')")
+                expect(page.locator('#report')).to_contain_text('jenkins:result')
                 assert 'NEVER_PERSIST' not in page.locator('#report').inner_text()
                 assert page.locator('#download').get_attribute('href').startswith('/api/diagnostics/report?id=')
                 page.locator('#digest').fill('sha256:'+'a'*64)
                 page.locator('#scan').set_input_files({'name':'scan.json','mimeType':'application/json','buffer':json.dumps({'SchemaVersion':2,'Results':[{'Vulnerabilities':[{'VulnerabilityID':'<img src=x onerror="window.bad=true">','Severity':'HIGH'}]}]}).encode()})
                 page.get_by_role('button',name='Import report',exact=True).click()
-                page.wait_for_function("document.getElementById('report').textContent.includes('VulnerabilityID')")
+                expect(page.locator('#report')).to_contain_text('VulnerabilityID')
                 assert not page.evaluate('Boolean(window.bad)')
                 for name,width in [('desktop',1440),('mobile',390)]:
                     page.set_viewport_size({'width':width,'height':1000})

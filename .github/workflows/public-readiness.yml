@@ -31,18 +31,18 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: Vishnu063/devops-troubleshooting-labs
-          ref: 61c255c6ed83399b98d407c33c1d2b1ba41f1bd0
+          ref: 7eb89f90951fdb7608f34c9015ba127816c660d2
           path: labs
           persist-credentials: false
-      - name: Start isolated nested daemon under an enforced 8 GiB ceiling
+      - name: Start isolated nested daemon under an enforced 8 GB ceiling
         run: |
-          docker run -d --name ops-public-budget --label io.ops-pilot.public-lab=true --privileged --cgroupns=private --memory=8g --memory-swap=8g --cpus=2 --mount "type=bind,src=$GITHUB_WORKSPACE,dst=/work" docker:28-dind dockerd --host=unix:///var/run/docker.sock --storage-driver=overlay2
+          docker run -d --name ops-public-budget --label io.ops-pilot.public-lab=true --privileged --cgroupns=private --memory=8000000000 --memory-swap=8000000000 --cpus=2 --mount "type=bind,src=$GITHUB_WORKSPACE,dst=/work" docker:28-dind dockerd --host=unix:///var/run/docker.sock --storage-driver=overlay2
           for attempt in $(seq 1 60); do
             if docker exec ops-public-budget docker info >/dev/null 2>&1; then break; fi
             sleep 1
           done
-          test "$(docker inspect --format '{{.HostConfig.Memory}}' ops-public-budget)" = 8589934592
-          docker exec ops-public-budget sh -c 'test "$(cat /sys/fs/cgroup/memory.max)" = 8589934592; docker info >/dev/null'
+          test "$(docker inspect --format '{{.HostConfig.Memory}}' ops-public-budget)" = 8000000000
+          docker exec ops-public-budget sh -c 'test "$(cat /sys/fs/cgroup/memory.max)" = 8000000000; docker info >/dev/null'
       - name: Install only disposable lab tools
         run: |
           docker exec ops-public-budget sh -ec '

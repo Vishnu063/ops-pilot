@@ -58,6 +58,12 @@ class DiagnosticTests(unittest.TestCase):
         with self.desk.connect() as db:
             with self.assertRaises(Exception):db.execute("DELETE FROM audit")
 
+    def test_jenkins_missing_build_identity_fails_closed_without_reading_a_console(self):
+        with patch.object(ToolAdapter,'request',return_value=('{"building":false}',200)) as requests:
+            r=self.desk.collect('jenkins')
+        self.assertEqual(r['status'],'inconclusive')
+        self.assertEqual(requests.call_count,1)
+
     def test_busy_collector_refuses_queued_execution(self):
         self.desk.lock.acquire()
         try:
@@ -70,6 +76,7 @@ class DiagnosticTests(unittest.TestCase):
         self.assertEqual(r['counts']['CRITICAL'],1);self.assertNotIn('SECRET',json.dumps(r));self.assertEqual(r['actions'],[])
         with self.assertRaises(ValueError):self.desk.trivy({'artifact_digest':'latest','report':raw})
         with self.assertRaises(ValueError):self.desk.trivy({'artifact_digest':'sha256:'+'a'*64,'report':{}})
+        with self.assertRaises(ValueError):self.desk.trivy({'artifact_digest':'sha256:'+'a'*64,'report':{'SchemaVersion':2,'Results':[{'Secrets':[{'Title':'sensitive'}]}]}})
 
     def test_environment_report_isolation(self):
         r=self.desk.trivy({'artifact_digest':'sha256:'+'a'*64,'report':{'SchemaVersion':2,'Results':[]}})
