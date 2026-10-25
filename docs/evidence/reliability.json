@@ -1,7 +1,7 @@
 {
   "date": "2026-10-25",
-  "observed_implementation": "38f999946645c891d6d0f84191e4d7057e5ed60b",
-  "constrained_run": "https://github.com/Vishnu063/ops-pilot/actions/runs/40210376828",
+  "observed_implementation": "7d6439ac583f20d4ea2b7b014ecbc64579afb473",
+  "constrained_run": "https://github.com/Vishnu063/ops-pilot/actions/runs/40211776518",
   "results": [
     {
       "synthetic": true,
@@ -27,8 +27,8 @@
         "oom_group_kill": 0
       },
       "cleanup_errors": [],
-      "elapsed_seconds": 132.515,
-      "enclosing_cgroup_peak_bytes": 4161495040,
+      "elapsed_seconds": 130.742,
+      "enclosing_cgroup_peak_bytes": 4188807168,
       "enclosing_local_events_after": {
         "low": 0,
         "high": 0,
@@ -55,9 +55,9 @@
       "resource_fixture_projection": "Real cgroup CPU/memory and tmpfs usage projected into node-style metric series by a CI-only fixture, not a deployed production node exporter.",
       "grafana_dashboard_uid": "devops-ecosystem",
       "cleanup_errors": [],
-      "elapsed_seconds": 60.13,
+      "elapsed_seconds": 61.719,
       "memory_limit_bytes": 8000000000,
-      "memory_peak_bytes": 4161495040,
+      "memory_peak_bytes": 4188807168,
       "enclosing_local_memory_events": {
         "low": 0,
         "high": 0,
@@ -74,73 +74,73 @@
       "stages": [
         {
           "stage": "CloudLaunch sample deployed",
-          "elapsed_seconds": 14.871,
+          "elapsed_seconds": 7.318,
           "release_id": "887130a843eedceec7b46a1c3e3f066800e6ce06",
-          "image_id": "sha256:c2050d5ae0407166aef18f1f382ecc61d85e4fe6d8bcf74e895bc7d6f553d567"
+          "image_id": "sha256:4a07389b4471f8986f3d4c1d2a29ead61cf03dfc1e173117bcc80b043d084a93"
         },
         {
           "stage": "Monitoring observes healthy sample",
-          "elapsed_seconds": 23.307
+          "elapsed_seconds": 15.759
         },
         {
           "stage": "Owned test application stopped",
-          "elapsed_seconds": 26.43
+          "elapsed_seconds": 18.892
         },
         {
           "stage": "Prometheus alert received by Ops Pilot",
-          "elapsed_seconds": 30.478,
-          "incident_id": "1465f86aaf364592267f4ae3"
+          "elapsed_seconds": 22.96,
+          "incident_id": "09079251ea6c57adf2f7c9dd"
         },
         {
           "stage": "Real firing alert confirmed",
-          "elapsed_seconds": 30.487
+          "elapsed_seconds": 22.973
         },
         {
           "stage": "Source/read credentials cannot authorize and failed verification remains failed",
-          "elapsed_seconds": 38.704
+          "elapsed_seconds": 31.271
         },
         {
           "stage": "Real native Docker evidence and deterministic diagnosis collected",
-          "elapsed_seconds": 42.853
+          "elapsed_seconds": 35.471
         },
         {
           "stage": "Exact backend restart proposal created",
-          "elapsed_seconds": 42.938
+          "elapsed_seconds": 35.58
         },
         {
           "stage": "No repair before approval verified",
-          "elapsed_seconds": 42.958
+          "elapsed_seconds": 35.608
         },
         {
           "stage": "Owner approved exact incident plan",
-          "elapsed_seconds": 43.041
+          "elapsed_seconds": 35.716
         },
         {
           "stage": "Allowlisted repair executed; container and HTTP verified",
-          "elapsed_seconds": 47.529
+          "elapsed_seconds": 40.266
         },
         {
           "stage": "HTTP, actual metrics and alert resolution verified",
-          "elapsed_seconds": 49.685,
-          "recovery_seconds": 19.704
+          "elapsed_seconds": 42.475,
+          "recovery_seconds": 19.705
         },
         {
           "stage": "Correlated incident report and audit exported",
-          "elapsed_seconds": 49.707
+          "elapsed_seconds": 42.508
         },
         {
           "stage": "Platform read-only incident view verified",
-          "elapsed_seconds": 49.732
+          "elapsed_seconds": 42.54
         }
       ],
       "passed_stages": 14,
-      "main_process_peak_rss_kib": 41344,
-      "elapsed_seconds": 49.732,
+      "main_process_peak_rss_kib": 41564,
+      "elapsed_seconds": 42.54,
       "limits": "No claim that the entire optional stack fits in 8 GB; Grafana/Jenkins/Kind/K8sGPT not started",
       "cleanup_verified": true
     }
   ],
-  "scope": "Recorded baseline before final UI archive/crash/prior-good strengthening. Final reviewed head is checked independently before merge; historical raw results are not relabeled.",
+  "scope": "Eleven checks passed on this implementation. Subsequent documentation-only commits must pass their own checks before merge. Sequential isolated owned fixtures, no customer changes; not concurrent production sizing or generic production rollback.",
   "pending_external": [
     "AWS/account access",
     "ArgoCD/Helm runtime",
@@ -148,5 +148,19 @@
     "Production exporters and pharmacy/Trivy runtime",
     "Public/multi-user deployment and concurrent production capacity",
     "Owner distribution-license decisions"
-  ]
+  ],
+  "standard_run": "https://github.com/Vishnu063/ops-pilot/actions/runs/40211776550",
+  "ecosystem_run": "https://github.com/Vishnu063/ops-pilot/actions/runs/40211776537",
+  "security_run": "https://github.com/Vishnu063/ops-pilot/actions/runs/40211776534",
+  "checks": {
+    "jobs_passed": 11,
+    "cases_per_python_version": 79,
+    "python_versions": [
+      "3.11",
+      "3.12",
+      "3.13"
+    ],
+    "docker_opt_in_skips_per_version": 4,
+    "docker_tested_separately": true
+  }
 }
