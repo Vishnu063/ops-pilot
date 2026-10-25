@@ -1,0 +1,209 @@
+[
+  {
+    "repository": "Vishnu063/ops-pilot",
+    "url": "https://github.com/Vishnu063/ops-pilot",
+    "description": "AI DevOps assistant that investigates failures, proposes approved repairs, and verifies recovery.",
+    "license": "MIT",
+    "pushed_at": "2026-10-23T21:01:08Z",
+    "archived": false,
+    "default_branch": "main"
+  },
+  {
+    "repository": "n8n-io/n8n",
+    "url": "https://github.com/n8n-io/n8n",
+    "description": "Fair-code workflow automation platform with native AI capabilities. Combine visual building with custom code, self-host or cloud, 400+ integrations.",
+    "license": "NOASSERTION",
+    "pushed_at": "2026-10-23T22:14:54Z",
+    "archived": false,
+    "default_branch": "master"
+  },
+  {
+    "repository": "Vishnu063/devops-triage-assistant",
+    "url": "https://github.com/Vishnu063/devops-triage-assistant",
+    "description": null,
+    "license": null,
+    "pushed_at": "2026-10-17T13:33:34Z",
+    "archived": false,
+    "default_branch": "main"
+  },
+  {
+    "repository": "Vishnu063/devops_platform",
+    "url": "https://github.com/Vishnu063/devops_platform",
+    "description": null,
+    "license": null,
+    "pushed_at": "2026-10-23T16:20:29Z",
+    "archived": false,
+    "default_branch": "main"
+  },
+  {
+    "repository": "msitarzewski/agency-agents",
+    "url": "https://github.com/msitarzewski/agency-agents",
+    "description": "A complete AI agency at your fingertips - From frontend wizards to Reddit community ninjas, from whimsy injectors to reality checkers. Each agent is a specialized expert with personality, processes, and proven deliverables.",
+    "license": "MIT",
+    "pushed_at": "2026-10-19T16:48:24Z",
+    "archived": false,
+    "default_branch": "main"
+  },
+  {
+    "repository": "DeusData/codebase-memory-mcp",
+    "url": "https://github.com/DeusData/codebase-memory-mcp",
+    "description": "Local code intelligence for developers and AI agents. Connect code, docs and infrastructure in a persistent graph, with CBM Lens, MCP tools, agent integrations and change-aware test selection.",
+    "license": "MIT",
+    "pushed_at": "2026-10-22T02:01:25Z",
+    "archived": false,
+    "default_branch": "main"
+  },
+  {
+    "repository": "rtk-ai/rtk",
+    "url": "https://github.com/rtk-ai/rtk",
+    "description": "CLI proxy that reduces LLM token consumption by 60-90% on common dev commands. Single Rust binary, zero dependencies",
+    "license": "Apache-2.0",
+    "pushed_at": "2026-10-23T16:29:27Z",
+    "archived": false,
+    "default_branch": "develop"
+  },
+  {
+    "repository": "upstash/context7",
+    "url": "https://github.com/upstash/context7",
+    "description": "Context7 Platform -- Up-to-date docs for AI agents",
+    "license": "MIT",
+    "pushed_at": "2026-10-23T13:48:26Z",
+    "archived": false,
+    "default_branch": "master"
+  },
+  {
+    "repository": "Panniantong/Agent-Reach",
+    "url": "https://github.com/Panniantong/Agent-Reach",
+    "description": "Give your AI agent eyes to see the entire internet. Read & search Twitter, Reddit, YouTube, GitHub, Bilibili, XiaoHongShu \u2014 one CLI, zero API fees.",
+    "license": "MIT",
+    "pushed_at": "2026-10-23T06:44:33Z",
+    "archived": false,
+    "default_branch": "main"
+  },
+  {
+    "repository": "Alejog20/Marketing-Multi_AI_Agent",
+    "url": "https://github.com/Alejog20/Marketing-Multi_AI_Agent",
+    "description": "A Python pipeline connected to an LLM  to help make more efficient the Upwork gig search and automate proposals for customers. ",
+    "license": null,
+    "pushed_at": "2026-10-20T21:23:42Z",
+    "archived": false,
+    "default_branch": "main"
+  },
+  {
+    "repository": "OpenHands/OpenHands",
+    "url": "https://github.com/OpenHands/OpenHands",
+    "description": "\ud83d\ude4c OpenHands: AI-Driven Development",
+    "license": "MIT",
+    "pushed_at": "2026-10-23T17:53:56Z",
+    "archived": false,
+    "default_branch": "main"
+  },
+  {
+    "repository": "VRSEN/agency-swarm",
+    "url": "https://github.com/VRSEN/agency-swarm",
+    "description": "Reliable Multi-Agent Orchestration Framework",
+    "license": "MIT",
+    "pushed_at": "2026-10-21T19:49:11Z",
+    "archived": false,
+    "default_branch": "main"
+  },
+  {
+    "repository": "K-Dense-AI/scientific-agent-skills",
+    "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+    "description": "Turn any AI agent into an AI Scientist. The #1 Agent Skills library for science, used by 250,000+ scientists worldwide. 177 ready-to-use validated skills plus 100+ scientific databases covering biology, chemistry, medicine, and drug discovery. Compatible with Cursor, Claude Code, Codex, Pi, Antigravity, and the open Agent Skills standard.",
+    "license": "MIT",
+    "pushed_at": "2026-10-19T09:33:57Z",
+    "archived": false,
+    "default_branch": "main"
+  },
+  {
+    "repository": "k2-fsa/OmniVoice",
+    "url": "https://github.com/k2-fsa/OmniVoice",
+    "description": "High-Quality Voice Cloning TTS for 600+ Languages",
+    "license": "Apache-2.0",
+    "pushed_at": "2026-10-19T23:04:15Z",
+    "archived": false,
+    "default_branch": "master"
+  },
+  {
+    "repository": "morluto/rea",
+    "url": "https://github.com/morluto/rea",
+    "description": "Reverse engineer anything with agents, from app behavior down to native binaries.",
+    "license": "MIT",
+    "pushed_at": "2026-10-23T22:14:36Z",
+    "archived": false,
+    "default_branch": "main"
+  },
+  {
+    "repository": "vxcontrol/pentagi",
+    "url": "https://github.com/vxcontrol/pentagi",
+    "description": "Fully autonomous AI Agents system capable of performing complex penetration testing tasks",
+    "license": "MIT",
+    "pushed_at": "2026-10-22T23:26:13Z",
+    "archived": false,
+    "default_branch": "main"
+  },
+  {
+    "repository": "niket-sharma/autogig",
+    "url": "https://github.com/niket-sharma/autogig",
+    "description": " Autonomous AI agent that discovers freelance gigs, writes proposals, and automates bidding.",
+    "license": "MIT",
+    "pushed_at": "2026-03-01T08:00:30Z",
+    "archived": false,
+    "default_branch": "master"
+  },
+  {
+    "repository": "Teja-2k/hustlebot",
+    "url": "https://github.com/Teja-2k/hustlebot",
+    "description": "AI agent that finds freelance gigs, writes winning proposals, and helps deliver work \u2014 powered by Claude",
+    "license": "MIT",
+    "pushed_at": "2026-03-19T06:10:38Z",
+    "archived": false,
+    "default_branch": "master"
+  },
+  {
+    "repository": "MengTo/threeui",
+    "url": "https://github.com/MengTo/threeui",
+    "description": "Open-source ThreeUI Community catalog with live interactive components and complete Community source.",
+    "license": "MIT",
+    "pushed_at": "2026-09-03T05:36:26Z",
+    "archived": false,
+    "default_branch": "main"
+  },
+  {
+    "repository": "ollama/ollama",
+    "url": "https://github.com/ollama/ollama",
+    "description": "Get up and running with Kimi, GLM, MiniMax, DeepSeek, gpt-oss, Qwen, Gemma and other models.",
+    "license": "MIT",
+    "pushed_at": "2026-10-23T21:53:13Z",
+    "archived": false,
+    "default_branch": "main"
+  },
+  {
+    "repository": "kytheros/strata",
+    "url": "https://github.com/kytheros/strata",
+    "description": "Local first persistent memory for AI agents.",
+    "license": "Apache-2.0",
+    "pushed_at": "2026-08-04T17:40:19Z",
+    "archived": false,
+    "default_branch": "main"
+  },
+  {
+    "repository": "avinash-1707/Strata",
+    "url": "https://github.com/avinash-1707/Strata",
+    "description": "Local-first memory layer for AI agents. Compresses context with a local LLM, indexes it with hybrid search, and serves it over MCP.",
+    "license": "MIT",
+    "pushed_at": "2026-08-07T20:27:22Z",
+    "archived": false,
+    "default_branch": "main"
+  },
+  {
+    "repository": "ymadd/strata-workflow",
+    "url": "https://github.com/ymadd/strata-workflow",
+    "description": "Model-tiered, budget-bounded multi-agent orchestration for Claude Code \u2014 built on dynamic Workflows + ultracode, without the budget blowout. Modes: focus / panel / scale / grow.",
+    "license": "MIT",
+    "pushed_at": "2026-09-30T17:53:15Z",
+    "archived": false,
+    "default_branch": "main"
+  }
+]

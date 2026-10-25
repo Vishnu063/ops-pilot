@@ -23,6 +23,16 @@ reported **Recovery checks passed** after the repair flow. This is user-reported
 demo evidence, not an independently captured production test. CloudLaunch/PharmaCare
 was not involved.
 
+## New: Freelance studio + n8n control centre
+
+A separate workspace now tracks freelance projects through nine bounded local roles: Scout, Evaluator, Manager, Client assistant, Proposal writer, DevOps worker, Reviewer, Delivery and Earnings. It records outputs and explicit owner decisions, generates Docker deployment **starter files for an existing image**, checks them statically and packages a signed-off handover. No platform account, AI model, customer deployment or payment processor is connected.
+
+![Freelance studio — synthetic demonstration](docs/images/freelance-studio.png)
+
+**[All 50 agency steps](docs/AGENCY-ROADMAP.md)** · **[Current verification](docs/AGENCY-VALIDATION.md)** · **[Open the easy setup guide](docs/FREELANCE.md)** · **[Import the n8n canvas](n8n/freelance-agency.json)** · [Observed validation](docs/FREELANCE-VALIDATION.md)
+
+The n8n control form supports importing a listing, viewing all project outputs and files, owner decisions, worker/reviewer execution, earnings and ZIP download. Credentials and a running backend must be configured on your own server. The original monitoring dashboard links to `/freelance`; standalone mode also works without a configured Docker target. These additions do not turn the preview into an autonomous or production-ready freelance business.
+
 ## Setup on Ubuntu / EC2
 
 Run the server commands below in your **EC2 SSH terminal**. Run only the SSH
@@ -466,3 +476,28 @@ authentication, audit retention and hosted deployment. The current local cookie
 session is not customer RBAC. There is no public SaaS, billing or multi-customer
 support yet. Hosting and optional AI still consume resources even when software
 has no subscription fee. No production changes have been made by building this repo.
+
+## Agency continuation
+
+The continuation adds owner-only `quote`, `intake_check` and `draft_message` actions through the studio and n8n Owner decision form. They calculate an estimate, flag missing/unsupported requirements and expired access references, and save unsent client drafts. They grant no customer deployment permission and create no payment. See the [operating examples](docs/AGENCY-OPERATIONS.md#saved-estimates-intake-inspection-and-client-drafts) and [current validation](docs/AGENCY-VALIDATION.md).
+
+All seven CI jobs passed for implementation commit `baeb6fb`, including quote/intake/draft browser paths, real generated-bundle Docker, and authenticated n8n form-to-ZIP acceptance with duplicate imports and rejected decisions: [verified run](https://github.com/Vishnu063/ops-pilot/actions/runs/40059875230). The roadmap records 35 verified repository/synthetic steps and 15 prepared/documented steps; real customer actions remain pending.
+
+The existing monitor and nine-role freelance studio now include owner-maintained requirements, tasks/dependencies, scope-change records, invoices, expenses, time/labor, validation references, customer acceptance and offboarding. Finances stay separated by project/currency. Records are assertions, not independently verified consent or money.
+
+The first service is deployment **assistance** for one existing trusted stateless HTTP image on Linux/EC2. The worker generates Compose and handover files. An explicitly enabled, digest-approved disposable Docker lab can exercise that exact Compose file with loopback ports, limits, readiness checks and ownership-checked cleanup. Customer deployment and acceptance remain separate. Later services are gated, not advertised as implemented workers.
+
+Private SQLite backup/verification/fresh-destination restoration includes stored artifacts and clears recovered approvals. Optional local Ollama advice requires an already installed model and remains untrusted text with no tools or paid fallback. Deterministic operation remains usable without it.
+
+- [All 50 steps and their exact statuses](docs/AGENCY-ROADMAP.md)
+- [Service, intake, pricing, agreement, support, scope-change and recovery manual](docs/AGENCY-OPERATIONS.md)
+- [Current validation and external dependencies](docs/AGENCY-VALIDATION.md)
+- [Selective repository/license decisions](docs/REPOSITORY-DECISIONS.md)
+- [Synthetic pilot evidence](docs/evidence/synthetic-pilot.json) and [example handover](docs/example-delivery/HANDOVER.md)
+
+Use the existing [studio setup guide](docs/FREELANCE.md), then open Project operations for owner records and lab controls. The n8n Owner decision form also accepts business record types through Record JSON. Neither interface sends customer messages. The screenshot below is a reviewed synthetic agency example from Linux browser acceptance. It shows no customer work or earnings. Existing architecture remains loopback Ops Pilot + SQLite as authoritative state, optional n8n as orchestration, and the pinned triage engine for original monitoring. No additional orchestration framework is required.
+
+![Synthetic agency studio with owner business records](docs/images/agency-studio.png)
+
+
+The n8n intake now resumes existing projects without replaying completed planning roles. Rejected/closed projects return the board; terminal owner decisions finish without invoking another agent. See [routing validation](docs/AGENCY-VALIDATION.md#routing-regression-continuation-2026-10-24-utc) for current evidence.

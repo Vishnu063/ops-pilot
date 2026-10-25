@@ -5,6 +5,7 @@ container mutations; this script tests real browser/session/UI behavior.
 """
 from pathlib import Path
 import json
+import os
 import sys
 import threading
 
@@ -31,7 +32,13 @@ def run():
         origin = f"http://127.0.0.1:{server.server_port}"
         errors = []
         with sync_playwright() as playwright:
-            browser = playwright.chromium.launch()
+            options = {}
+            if os.environ.get('OPS_PILOT_CHROMIUM'):
+                options.update(executable_path=os.environ['OPS_PILOT_CHROMIUM'], args=[
+                    '--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu',
+                    '--no-zygote', '--use-gl=angle',
+                    '--use-angle=swiftshader', '--disable-features=Vulkan'])
+            browser = playwright.chromium.launch(**options)
             context = browser.new_context(viewport={"width": 1280, "height": 900})
             page = context.new_page()
             page.on("pageerror", lambda error: errors.append(str(error)))
