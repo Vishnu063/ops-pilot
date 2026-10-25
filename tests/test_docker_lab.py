@@ -58,15 +58,20 @@ class DockerLab(unittest.TestCase):
                 return True
             time.sleep(.5)
         return False
-    def fail_and_plan(self):
-        docker("stop", "--time", "1", self.identifier)
+    def fail_and_plan(self, crash=False):
+        if crash:
+            docker("kill", "--signal", "KILL", self.identifier)
+        else:
+            docker("stop", "--time", "1", self.identifier)
         self.pilot.tick()
         self.assertFalse(self.pilot.monitor["healthy"])
         self.assertTrue(self.pilot.report["findings"])
         self.assertEqual("exited", json.loads(docker("inspect", self.identifier))[0]["State"]["Status"])
         return self.pilot.action("plan")["id"]
     def test_real_outage_approval_restart_http_verification_and_replay(self):
-        plan = self.fail_and_plan()
+        plan = self.fail_and_plan(crash=True)
+        self.assertEqual(137,self.pilot.diagnosis()['exit_code'])
+        self.assertFalse(self.pilot.diagnosis()['oom_killed'],'SIGKILL alone must not be diagnosed as OOM')
         with self.assertRaises(ValueError): self.pilot.action("apply", plan)
         self.pilot.action("approve", plan)
         self.assertEqual("exited", json.loads(docker("inspect", self.identifier))[0]["State"]["Status"])

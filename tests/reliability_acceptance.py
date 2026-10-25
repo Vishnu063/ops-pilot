@@ -123,17 +123,22 @@ def main():
             rollback_port=port();rollback_url='http://127.0.0.1:'+str(rollback_port)+'/'
             app='from http.server import HTTPServer,BaseHTTPRequestHandler; import os\nclass H(BaseHTTPRequestHandler):\n def log_message(self,*a):pass\n def do_GET(self):self.send_response(200 if os.environ["RELEASE"]=="good" else 503);self.end_headers();self.wfile.write(b"fixture")\nHTTPServer(("127.0.0.1",int(os.environ["APP_PORT"])),H).serve_forever()'
             image=json.loads(docker('image','inspect','python:3.12-alpine'))[0]['Id']
+            previous=create('ops-prior-good-'+identity,image,['python','-c',app],['--memory','64m','--cpus','0.25','-e','RELEASE=good','-e','APP_PORT='+str(rollback_port)])
+            previous_policy=dict(url=rollback_url,attempts=5,successes=2,timeout=3,interval=1)
+            assert wait(lambda:check_health(previous_policy)['healthy'])
+            remove(previous)
             bad=create('ops-bad-'+identity,image,['python','-c',app],['--memory','64m','--cpus','0.25','-e','RELEASE=bad','-e','APP_PORT='+str(rollback_port)])
-            docker('stop','--time','1',bad)
+            docker('kill','--signal','KILL',bad)
             failed=Pilot(dict(config,name='Owned failed release',container=bad,health_url=rollback_url,health_attempts=5),directory/'rollback')
-            failed.action('investigate');plan=failed.action('plan')
+            failed.action('investigate');assert failed.diagnosis()['exit_code']==137 and failed.diagnosis()['oom_killed'] is False
+            plan=failed.action('plan')
             try:failed.action('apply',plan['id']);raise AssertionError('Unapproved repair accepted')
             except ValueError:pass
             failed.action('approve',plan['id']);outcome=failed.action('apply',plan['id'])
             assert outcome['status']=='needs_attention' and outcome['application_health']['healthy'] is False
             try:failed.action('apply',plan['id']);raise AssertionError('Approval replay accepted')
             except ValueError:pass
-            rollback_plan=dict(target=bad,daemon=docker('info','--format','{{.ID}}'),image=image,release='good',health_url=rollback_url,expires_at=time.time()+60)
+            rollback_plan=dict(target=bad,daemon=docker('info','--format','{{.ID}}'),image=image,release='good',previous_verified_target=previous,health_url=rollback_url,expires_at=time.time()+60)
             digest=hashlib.sha256(json.dumps(rollback_plan,sort_keys=True).encode()).hexdigest()
             approval={'plan_digest':digest,'decision':'approve','scope':'Owned CI-only stateless replacement; separate from restart approval'}
             assert approval['plan_digest']==hashlib.sha256(json.dumps(rollback_plan,sort_keys=True).encode()).hexdigest()
