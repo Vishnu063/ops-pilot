@@ -31,7 +31,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: Vishnu063/devops-troubleshooting-labs
-          ref: 7eb89f90951fdb7608f34c9015ba127816c660d2
+          ref: e9100c28609fe48bc6e17ab58fb1070ed4382b8c
           path: labs
           persist-credentials: false
       - name: Start isolated nested daemon under an enforced 8 GB ceiling
