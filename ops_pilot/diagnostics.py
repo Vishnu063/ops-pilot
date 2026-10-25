@@ -18,6 +18,16 @@ from triage.ecosystem import k8sgpt
 TOOLS = frozenset(('kubernetes', 'jenkins', 'aws', 'helm', 'argocd', 'prometheus', 'grafana'))
 
 
+def optional_analysis(context, namespace, enabled):
+    try:
+        result=k8sgpt(context,namespace,enabled)
+        if not isinstance(result,dict):raise ValueError('Incompatible optional analyzer response')
+        return result
+    except (ValueError,RuntimeError,OSError,TypeError):
+        return {'status':'inconclusive','executable':False,'untrusted':True,
+                'explanation':'Optional analyzer unavailable or incompatible; native evidence is retained. No provider inference or generated command is executed.'}
+
+
 def wizard(path):
     """Create a new private profile without credentials, network access or overwrite."""
     path = Path(path).expanduser()
@@ -152,7 +162,7 @@ class Diagnostics:
                     report['findings'].append(dict(code='application-health', title='Configured HTTP health policy failed', evidence='Configured endpoint did not satisfy its bounded policy', likely_cause='Application, routing, authentication or dependencies may be failing.', next_steps=['Check endpoint samples and dependencies before any repair.']))
                 report['status'] = 'inconclusive' if snapshot.get('errors') or report['deep_evidence'].get('errors') else 'findings' if report['findings'] else 'no_findings_in_scope'
                 if tool == 'kubernetes':
-                    report['k8sgpt'] = k8sgpt(adapter.config['context'], adapter.config['namespace'], os.environ.get('OPS_PILOT_K8SGPT') == '1')
+                    report['k8sgpt'] = optional_analysis(adapter.config['context'], adapter.config['namespace'], os.environ.get('OPS_PILOT_K8SGPT') == '1')
                 annotate(report)
             except (ValueError, RuntimeError, OSError, TypeError, KeyError, IndexError, AttributeError):
                 report = dict(tool=tool, target=adapter.target, status='inconclusive', findings=[],

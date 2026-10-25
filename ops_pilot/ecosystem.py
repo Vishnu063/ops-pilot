@@ -132,6 +132,10 @@ class EventHub:
             if not values:return None
             return all(float(v['value'][1])==1 and 0<=time.time()-float(v['value'][0])<30 for v in values)
         except (ValueError,TypeError,KeyError,IndexError,AttributeError,OSError,RuntimeError):return None
+    @staticmethod
+    def resolution_confirmed(incident):
+        states=incident.get('alert_states',{})
+        return bool(states) and all(s.get('status')=='resolved' for s in states.values())
     def _save(self,db,incident):
         incident['revision']+=1
         db.execute('INSERT INTO incidents VALUES (?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET status=excluded.status,revision=excluded.revision,payload=excluded.payload',
@@ -175,8 +179,8 @@ class EventHub:
         try:
             if action=='investigate':
                 report=self.pilot.action('investigate');incident['evidence']=redact(report)
-                from triage.ecosystem import k8sgpt
-                incident['k8sgpt']=k8sgpt(os.environ.get('OPS_PILOT_K8SGPT_CONTEXT',''),os.environ.get('OPS_PILOT_K8SGPT_NAMESPACE',''),os.environ.get('OPS_PILOT_K8SGPT')=='1')
+                from .diagnostics import optional_analysis
+                incident['k8sgpt']=optional_analysis(os.environ.get('OPS_PILOT_K8SGPT_CONTEXT',''),os.environ.get('OPS_PILOT_K8SGPT_NAMESPACE',''),os.environ.get('OPS_PILOT_K8SGPT')=='1')
                 with self.connect() as db:raw=db.execute('SELECT payload FROM incoming WHERE incident=? ORDER BY at DESC LIMIT 1',(incident['id'],)).fetchone()[0]
                 with self.connect() as db:
                     recent=[json.loads(r[0]) for r in db.execute('SELECT payload FROM incoming WHERE at>? ORDER BY at DESC LIMIT 50',(time.time()-86400,))]
@@ -204,7 +208,7 @@ class EventHub:
                 outcome=self.pilot.action('apply',incident['plan_id']);incident['execution']=redact(outcome)
                 state_good=outcome.get('infrastructure_status')=='verified';http_good=outcome.get('application_health',{}).get('healthy')
                 # Monitoring notification resolution is also required before incident closure.
-                incident['verification']=verify({'container':state_good,'prometheus':self.monitor_check() if incident['external_resolved'] else None,'error_rate':None})
+                incident['verification']=verify({'container':state_good,'prometheus':self.monitor_check() if self.resolution_confirmed(incident) else None,'error_rate':None})
                 incident['verification']['checks']['http']=http_good
                 incident['status']='awaiting_monitoring' if state_good and http_good is True else 'needs_attention'
             elif action=='verify':
@@ -218,7 +222,7 @@ class EventHub:
                     container_ok=container_ok and identity_ok
                 incident['verification_evidence']=redact(report)
                 # Only explicitly supplied metrics are required. Error-rate criterion remains unknown if configured externally without evidence.
-                checks={'container':bool(container_ok),'prometheus':self.monitor_check() if incident['external_resolved'] else None}
+                checks={'container':bool(container_ok),'prometheus':self.monitor_check() if self.resolution_confirmed(incident) else None}
                 result=verify(checks);result['checks']['http']=health.get('healthy')
                 if health.get('healthy') is not True:result['status']='failed' if health.get('healthy') is False else 'inconclusive'
                 incident['verification']=result;incident['status']='verified' if result['status']=='verified' else 'needs_attention'

@@ -115,6 +115,8 @@ def main():
             saved=http(base+'/api/dashboards/uid/'+dashboard['uid'],headers=headers)
             assert len(saved['dashboard']['panels'])==len(dashboard['panels'])
             assert http(base+'/api/datasources/uid/ecosystem-prometheus/health',headers=headers)['status']=='OK'
+            plotted=http(base+'/api/datasources/proxy/uid/ecosystem-prometheus/api/v1/query?query=ALERTS',headers=headers)
+            assert plotted['status']=='success' and plotted['data']['result']
             result['checks'].append('Real Grafana authenticated health, imported Platform dashboard and live Prometheus datasource health')
             result['grafana_dashboard_uid']=dashboard['uid']
             # Failed recovery and separately approved manual rollback procedure, only for this owned stateless fixture.

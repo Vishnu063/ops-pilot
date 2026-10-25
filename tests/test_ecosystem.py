@@ -66,6 +66,22 @@ class EventHubTests(unittest.TestCase):
    raw=json.dumps({'status':'success','data':{'resultType':'vector','result':[{'value':[time.time()+offset,'1']}]}})
    with patch('ops_pilot.ecosystem.ToolAdapter.request',return_value=(raw,200)):self.assertIs(expected,self.hub.monitor_check())
   with patch('ops_pilot.ecosystem.ToolAdapter.request',return_value=('{"status":"error","data":{"result":[]}}',200)):self.assertIsNone(self.hub.monitor_check())
+ def test_legacy_resolved_boolean_without_current_alert_state_is_insufficient(self):
+  self.assertFalse(self.hub.resolution_confirmed({'external_resolved':True}))
+ def test_metric_annotations_are_numeric_and_malformed_service_payloads_are_refused(self):
+  stamp=datetime.now(timezone.utc).isoformat()
+  alert=dict(labels={'service':'demo','alertname':'CPUHigh'},fingerprint='metric',status='firing',startsAt=stamp,annotations={'observed_value':'96.2'})
+  ident=self.hub.alertmanager({'alerts':[alert]})['results'][0]['incident_id']
+  self.assertEqual(96.2,self.hub.get(ident)['trigger']['data']['observed_value'])
+  for bad in [None,{'labels':None},{**alert,'annotations':{'observed_value':'NaN'}}]:
+   with self.assertRaises(ValueError):self.hub.alertmanager({'alerts':[bad]})
+ def test_broken_optional_analyzer_does_not_discard_native_evidence(self):
+  ident=self.hub.ingest(self.event(),'alertmanager')['incident_id'];incident=self.hub.get(ident)
+  self.pilot.action.return_value={'findings':[{'title':'Observed stopped container','likely_cause':'Unknown underlying cause'}],'snapshot':{'observations':{'state':['exited']}}}
+  with patch('ops_pilot.diagnostics.k8sgpt',side_effect=ValueError('invalid analyzer JSON')):
+   result=self.hub.action(dict(incident_id=ident,revision=incident['revision'],action='investigate',plan_id=None))
+  self.assertEqual('diagnosed',result['status']);self.assertEqual('inconclusive',result['k8sgpt']['status'])
+  self.assertTrue(result['evidence']['findings']);self.assertEqual(1,self.pilot.action.call_count)
  def test_apply_without_approval_and_stale_revisions_are_refused(self):
   ident=self.hub.ingest(self.event(),'alertmanager')['incident_id'];current=self.hub.get(ident)
   with self.assertRaises(ValueError):self.hub.action(dict(incident_id=ident,revision=current['revision'],action='apply',plan_id=None))
