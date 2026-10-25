@@ -1,0 +1,66 @@
+{
+  "date": "2026-10-24",
+  "scope": "Implementation revisions; later documentation-only heads may differ. No main merges or customer changes.",
+  "repositories": {
+    "cloudlaunch": {
+      "repository": "https://github.com/Vishnu063/cloudlaunch",
+      "branch": "feat/unified-devops-engineer",
+      "implementation_sha": "a3eb8e658491d553d431729938194305a29c5996",
+      "pr": "https://github.com/Vishnu063/cloudlaunch/pull/4",
+      "reused": "Existing Jenkins/Compose pharmacy build, DB-aware health and rollback; existing sample site.",
+      "added": "Private release audit/outbox, immutable release tag/image references, optional Trivy gate/outcome, owned stateless demo deployment.",
+      "integrations": "Pinned Triage event client -> optional Ops Pilot inbox; existing exporter/textfile monitoring.",
+      "tests": "3 adapter/cleanup tests and source CI passed; real sample build/deploy/approved restart/HTTP recovery passed in linked Ops Pilot integration CI.",
+      "status": "Partial: sample deployment/event path verified; existing Jenkins/Trivy/pharmacy target runtime unverified.",
+      "remaining": "Configure protected Jenkins credentials and installed Trivy; independently exercise actual pipeline/security findings and customer-authorized target."
+    },
+    "devops_platform": {
+      "repository": "https://github.com/Vishnu063/devops_platform",
+      "branch": "feat/unified-devops-engineer",
+      "implementation_sha": "20fc7d8c4619d11216f6e95a31f2bd3577f8ffd2",
+      "pr": "https://github.com/Vishnu063/devops_platform/pull/13",
+      "reused": "Existing LiveFlow topology, native toolkit, application metrics and monitoring configuration.",
+      "added": "Optional namespace events, Helm, Argo CR and Ops Pilot sources, bounded one-pass collection, monitoring profiles with private credential/UID configuration.",
+      "integrations": "Read-only Ops Pilot API; optional Prometheus, Alertmanager, Blackbox, Grafana and existing exporters.",
+      "tests": "3 source/concurrency regressions; source/toolkit/docs CI passed. Authenticated incident read model passed real shared acceptance.",
+      "status": "Partial: read-only incident integration verified; actual external cluster/GitOps/Grafana/resource alerts unverified.",
+      "remaining": "Configure least-privilege cluster/Helm/Argo access and existing exporters; exercise optional Grafana provisioning and each resource/restart/rollout alert."
+    },
+    "ops-pilot": {
+      "repository": "https://github.com/Vishnu063/ops-pilot",
+      "branch": "feat/unified-devops-engineer",
+      "implementation_sha": "5a76efea3254c4f452e9c9be16e03c97c5de89e8",
+      "pr": "https://github.com/Vishnu063/ops-pilot/pull/5",
+      "reused": "Pilot, ExperienceEngine, ToolEngine, exact-target approval/expiry/replay controls, native health probes, owner sessions and agency studio.",
+      "added": "Scoped authenticated event inbox, durable idempotency/correlation, owner incident desk, evidence-linked proposals, audit chain, metric-aware recovery and report. Audit export is cursor-paginated and refused owner operations are audited.",
+      "integrations": "Pinned Triage package; optional CloudLaunch/Alertmanager producers, Platform reader, Prometheus and installed scoped K8sGPT.",
+      "tests": "All 9 jobs passed: Python matrix, original+new browser, original+generated Docker, systemd, n8n, new boundary tests and actual cross-project failure/approval/recovery.",
+      "status": "Verified for the documented one-Docker-target disposable ecosystem path; broader external services remain Partial.",
+      "remaining": "Customer authorization/access; live Kubernetes/GitOps/provider/Jenkins integrations; optional model evaluation; full-stack resource measurement."
+    },
+    "devops-troubleshooting-labs": {
+      "repository": "https://github.com/Vishnu063/devops-troubleshooting-labs",
+      "branch": "feat/unified-devops-engineer",
+      "implementation_sha": "80c7e2c7f9aeb76eab2ed5185aaeebadda479918",
+      "pr": "https://github.com/Vishnu063/devops-troubleshooting-labs/pull/1",
+      "reused": "Existing native Docker/Kind fault, grading, stability, reset and cleanup runners/catalog.",
+      "added": "10 mapped scenarios, cross-project real acceptance driver, observed bind-error compatibility regression.",
+      "integrations": "Imports CloudLaunch deploy/cleanup, Triage package and Ops Pilot engine; actual monitoring stack; Platform read-only client.",
+      "tests": "New source/metadata/compatibility checks, real shared ecosystem acceptance, and existing repository/Docker/Kind CI all passed (run 40073956072).",
+      "status": "Verified for new Docker ecosystem driver; broader scenario/provider runtime acceptance remains Partial.",
+      "remaining": "Independently exercise live Jenkins and optional resource/rollout/provider alert types. Scenario metadata is not runtime proof."
+    },
+    "devops-triage-assistant": {
+      "repository": "https://github.com/Vishnu063/devops-triage-assistant",
+      "branch": "feat/unified-devops-engineer",
+      "implementation_sha": "c87d3f6cc985d20d3950a4369e037542dd99113e",
+      "pr": "https://github.com/Vishnu063/devops-triage-assistant/pull/5",
+      "reused": "Existing diagnostic catalog, native Docker/Kubernetes/deep collectors, log signatures and bounded HTTP health.",
+      "added": "10 versioned wire contracts, reusable analysis/verification API, authenticated bounded client/private outbox and optional fixed-scope analyzer adapter.",
+      "integrations": "Shared version-pinned package API; optional installed K8sGPT without provider inference or command execution.",
+      "tests": "5 new contract/outbox/verification tests; full Python matrix, package, docs, real Docker and desktop/mobile CI passed.",
+      "status": "Verified for deterministic API and real Docker integration; optional K8sGPT/provider acceptance unverified.",
+      "remaining": "Explicit installed analyzer/context and separate live cluster/provider/model-rights/quality validation. No model download or paid fallback."
+    }
+  }
+}

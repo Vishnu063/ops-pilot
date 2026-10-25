@@ -501,3 +501,9 @@ Use the existing [studio setup guide](docs/FREELANCE.md), then open Project oper
 
 
 The n8n intake now resumes existing projects without replaying completed planning roles. Rejected/closed projects return the board; terminal owner decisions finish without invoking another agent. See [routing validation](docs/AGENCY-VALIDATION.md#routing-regression-continuation-2026-10-24-utc) for current evidence.
+
+## Optional unified DevOps incident desk
+
+Ops Pilot now has an opt-in event inbox and `/ecosystem` owner desk around the existing target-bound approval engine. Deployment events and Alertmanager webhooks correlate incidents, deduplicate delivery, collect native evidence, propose an exact restart and require separate owner approval/execution. Recovery requires container identity/state, HTTP health, a fresh configured Prometheus application probe and alert resolution. Read-only source credentials cannot approve. The agency studio and original monitor remain independently usable. [Ownership inventory](docs/ECOSYSTEM-INVENTORY.md) · [Setup, architecture, limits and current test evidence](docs/ECOSYSTEM.md).
+
+The lightweight cross-project failure-to-recovery path has passed real disposable CI, including source-role denial, no repair before approval, restart, consecutive HTTP/actual-metric recovery, alert resolution, report export and cleanup. [Complete five-repository results, exact implementation SHAs, measurements and remaining gates](docs/ECOSYSTEM-RESULTS.md). This does not claim live Jenkins/Kubernetes/Grafana/model/customer acceptance or a full-stack 8 GB fit.
