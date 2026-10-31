@@ -19,3 +19,10 @@ Real AWS/EKS/configured-provider validation, independent human/security review a
 Use the existing README native installation and `core/RUNBOOK.md`. That runbook contains private configuration, read-only IAM/RBAC scope, state permissions and acceptance commands. It also documents offline whole-state backup and why historical fleet/native approvals must not be restored into active operation. Generic infrastructure rollback and safe restoration of outstanding approvals are not implemented. Compose packaging is not certified by this change.
 
 Status: **HOLD** for production release. Repository CI work can be completed independently; live Coolify validation requires access that is currently unavailable. No automatic merge or deployment is authorized.
+
+
+## Native source scan finding and reviewed pin
+
+The expanded Bandit scan flagged B608 in the old native engine's conditional SQL string construction for incident timelines. Incident values were already parameter-bound; review found no demonstrated injection path. [Native PR #5](https://github.com/Vishnu063/devops-triage-assistant/pull/5) replaces that construction with two fixed SQL statements, preserving parameter binding, newest-first ordering and the 100-row limit. Three actual SQLite regressions cover bounds, exact filtering and SQL-looking literal incident IDs. No scanner suppression is used.
+
+Ops Pilot pins the reviewed source commit `d466ca4e1cdd93d02274145c0b12e73f76863b6d`; it does not adopt unrelated native changes or a moving branch. The native PR remains separate and unmerged. Its CI and the exact Ops Pilot head's CI must both be reviewed. The original portable archive remains historical and byte-for-byte unchanged; this follow-up is recorded in GitHub history.
