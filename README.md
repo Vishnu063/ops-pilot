@@ -543,3 +543,7 @@ Current verification: **113 passed / 25 socket-blocked errors / 4 Docker skips**
 Private SQLite preparation now rejects linked/non-regular state and sidecar files, enforces owner-only permissions and closes transaction connections reliably. Optional `docker` diagnostics adds an exact-container/daemon-bound, bounded CPU/memory sample; no additional repair operation is enabled. Diagnostics scope search is corrected and a status filter is available.
 
 Latest unit result: **156 attempted: 127 passed, 25 socket-blocked errors, 4 Docker skips, zero assertion failures**. Fourteen tests were added in this increment (nine storage, five Docker metrics). All 41 existing Coolify tests pass. Browser runners and security scanners remain blocked; real service compatibility, production readiness and current 8 GB sizing are not established. [Phase-by-phase delivery, defects and blockers](docs/core/MASTER-EXECUTION.md) · [Configuration, state permissions and backup/Compose boundaries](docs/core/RUNBOOK.md).
+
+## Current published release review
+
+The implementation is published in [draft PR #7](https://github.com/Vishnu063/ops-pilot/pull/7). See [release gates and security-audit scope](docs/RELEASE-REVIEW.md) and the PR checks for the exact current head. Earlier local validation/publication notes remain historical evidence. No disposable Coolify instance is available, so live v4.5.3 validation and production release remain on HOLD. No merge or deployment is authorized.
