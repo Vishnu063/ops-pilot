@@ -1,0 +1,57 @@
+{
+  "base_repository": "Vishnu063/ops-pilot",
+  "base_commit": "349aa13e4d3be33665bd8335636fc315e71b5ee2",
+  "branch": "feature/coolify-integration",
+  "official_contract": "Coolify v4.5.3 / 70c1bcb1381de7d42fd290e6cd50bf9a5bcf714d",
+  "synthetic": true,
+  "live_coolify_tested": false,
+  "live_telegram_delivery_tested": false,
+  "production_changes": false,
+  "baseline": {
+    "attempted": 79,
+    "passed": 54,
+    "socket_blocked": 21,
+    "docker_skipped": 4
+  },
+  "local_suite": {
+    "attempted": 115,
+    "passed": 86,
+    "socket_blocked": 25,
+    "docker_skipped": 4,
+    "assertion_failures": 0
+  },
+  "new_deterministic_tests": {
+    "passed": 32
+  },
+  "new_http_tests": {
+    "socket_blocked": 4
+  },
+  "syntax_checks": [
+    "Python compileall",
+    "bash -n start.sh scripts/install-service.sh",
+    "node --check for all five dashboard scripts",
+    "git diff --check"
+  ],
+  "ci": "Not run: GitHub publishing calls stalled without a confirmed result; shell proxy inaccessible",
+  "browser": "New Playwright script prepared, not executed in socket-restricted sandbox",
+  "security_scanner": "Bandit not available locally; configured CI job retained, no new scanner result claimed",
+  "memory": "Bounded design only; no full-fleet 8 GB capacity claim or measured deployment benchmark",
+  "limitations": [
+    "No real Coolify instance or token configured",
+    "No public/multi-tenant mode",
+    "No generic rollback",
+    "No independently verified remote permission/version behavior",
+    "Remote compare-and-swap unavailable; competing deployment controllers must be paused",
+    "Crash during action requires offline reconciliation; no automatic replay",
+    "SSRF/TLS transport tested with mocks, not real destination certificates"
+  ],
+  "packaging": {
+    "offline_wheel_build": "passed",
+    "included_modules": [
+      "coolify",
+      "fleet"
+    ],
+    "coolify_html_included": true,
+    "cli_help_fleet_commands": true
+  }
+}
