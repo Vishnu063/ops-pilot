@@ -49,6 +49,9 @@ class DockerAdapter(ToolAdapter):
         observations = super().parse(raw)
         items = json.loads(raw)
         observations["restart_count"] = [item.get("RestartCount") for item in items]
+        observations["image_id"] = [item.get("Image") for item in items]
+        from .coolify import clean
+        observations["image_reference"] = [clean((item.get("Config") or {}).get("Image"), limit=256) if isinstance((item.get("Config") or {}).get("Image"), str) else None for item in items]
         return observations
 
     def repair_allowed(self, snapshot):
@@ -139,7 +142,7 @@ class Pilot:
             explanation = "Docker reports an out-of-memory kill. Compare memory limits and usage before restarting."
         elif status == "restarting":
             explanation = "Container is restarting. Inspect startup logs and recent deployment changes."
-        return dict(state=status, exit_code=code, oom_killed=oom, restart_count=restarts, explanation=explanation)
+        return dict(state=status, exit_code=code, oom_killed=oom, restart_count=restarts, started_at=first("started"), container_health=first("health"), image_id=first("image_id"), image_reference=first("image_reference"), explanation=explanation)
 
     def export_report(self):
         state = self.state()

@@ -27,6 +27,15 @@ def main():
                 page.goto(base+'/login?token='+server.token);page.goto(base+'/diagnostics')
                 page.get_by_role('button',name='Collect evidence',exact=True).click()
                 expect(page.locator('#report')).to_contain_text('jenkins:result')
+                expect(page.locator('#collectors')).to_contain_text('last_successful_collection')
+                page.locator('#search').fill('does-not-exist')
+                assert page.locator('#reports option:not([hidden])').count()==0
+                page.locator('#search').fill('owned')
+                assert page.locator('#reports option:not([hidden])').count()==1
+                page.locator('#status-filter').select_option('inconclusive')
+                assert page.locator('#reports option:not([hidden])').count()==0
+                page.locator('#status-filter').select_option('findings')
+                assert page.locator('#reports option:not([hidden])').count()==1
                 assert 'NEVER_PERSIST' not in page.locator('#report').inner_text()
                 assert page.locator('#download').get_attribute('href').startswith('/api/diagnostics/report?id=')
                 page.locator('#digest').fill('sha256:'+'a'*64)

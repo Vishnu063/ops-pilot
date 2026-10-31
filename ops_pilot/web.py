@@ -12,10 +12,15 @@ from urllib.parse import parse_qs, urlsplit
 class Server(ThreadingHTTPServer):
     daemon_threads = True
     request_queue_size = 8
-    def __init__(self, pilot, port=8767, workspace=None, eventhub=None, diagnostics=None):
+    def __init__(self, pilot, port=8767, workspace=None, eventhub=None, diagnostics=None, fleet=None):
         self.request_slots = threading.BoundedSemaphore(8)
         self.diagnostics = diagnostics
+        self.fleet = fleet
         self.eventhub = eventhub
+        if pilot is not None and fleet is not None:
+            target=(pilot.config['docker_context'],pilot.config['container'])
+            if any((p.config['docker_context'],p.config['container'])==target for p in fleet.dockers.values()):
+                raise ValueError('The original Docker target must not be duplicated in fleet profiles')
         self.pilot = pilot
         self.workspace = workspace
         self.token = secrets.token_urlsafe(32)
@@ -119,6 +124,15 @@ class Handler(BaseHTTPRequestHandler):
             return self.send(303, "", "text/plain", {"Location": "/", "Set-Cookie": "ops_pilot=" + self.server.token + "; HttpOnly; SameSite=Strict; Path=/"})
         if not self.authenticated():
             return self.send(401, "Open the login link printed by start.sh. On EC2, create the SSH tunnel first. Restarting Ops Pilot changes the link.", "text/plain")
+        if url.path == '/coolify':
+            return self.send(200, Path(__file__).with_name('coolify.html').read_text(), 'text/html')
+        if url.path in ('/api/fleet/state','/api/fleet/report'):
+            fleet=self.server.fleet
+            if fleet is None: return self.send(200, {'enabled':False,'reason':'Configure a private --fleet-config to opt in'})
+            if url.path.endswith('/state'): return self.send(200, fleet.state())
+            try:
+                return self.send(200,fleet.report(int(parse_qs(url.query).get('after',['0'])[0])),headers={'Content-Disposition':'attachment; filename="ops-pilot-fleet-report.json"'})
+            except (ValueError,OSError): return self.send(409,{'error':'Private fleet report unavailable or invalid cursor'})
         if url.path == '/diagnostics':
             return self.send(200, Path(__file__).with_name('diagnostics.html').read_text(), 'text/html')
         if url.path in ('/api/diagnostics/state', '/api/diagnostics/report'):
@@ -172,6 +186,8 @@ class Handler(BaseHTTPRequestHandler):
         return self.send(404, {"error": "Not found"})
 
     def do_POST(self):
+        if self.path == "/api/fleet/action":
+            return self.fleet_request()
         if self.path in ('/api/diagnostics/collect', '/api/diagnostics/trivy'):
             return self.diagnostic_request()
         if self.path in ('/webhooks/ecosystem','/webhooks/alertmanager','/api/ecosystem/action'):
@@ -232,6 +248,23 @@ class Handler(BaseHTTPRequestHandler):
             return self.send(503, {'error': 'Workspace storage unavailable'})
 
 
+    def fleet_request(self):
+        if not self.host_allowed() or not self.authenticated() or self.headers.get('Origin') not in self.server.origins:
+            return self.send(403, {'error':'A local owner session and matching Origin are required'})
+        if self.server.fleet is None: return self.send(404, {'error':'Optional fleet is not configured'})
+        try:
+            if self.headers.get('Transfer-Encoding') or self.headers.get('Content-Type','').split(';')[0]!='application/json': raise ValueError('Use bounded JSON')
+            length=int(self.headers.get('Content-Length','0'))
+            if not 0<length<=2048: raise ValueError('Request exceeds bounds')
+            data=json.loads(self.rfile.read(length))
+            return self.send(200,self.server.fleet.action(data))
+        except (ValueError,TypeError,KeyError):
+            return self.send(409, {'error':'Action refused: refresh evidence and review target, expiry, permission, maintenance and cooldown'})
+        except RuntimeError:
+            return self.send(503, {'error':'Provider unavailable or unsupported; mutation outcome may be unknown. Inspect the saved incident before retrying'})
+        except OSError:
+            return self.send(503, {'error':'Private fleet storage or transport unavailable'})
+
     def diagnostic_request(self):
         if not self.host_allowed() or not self.authenticated() or self.headers.get('Origin') not in self.server.origins:
             return self.send(403, {'error': 'Owner session required; read/source credentials cannot collect or import'})
@@ -287,18 +320,20 @@ class Handler(BaseHTTPRequestHandler):
         except (ValueError,TypeError,KeyError,RuntimeError):return self.send(409,{'error':'Event or action refused; refresh and inspect current evidence'})
         except OSError:return self.send(503,{'error':'Local evidence storage or transport unavailable'})
 
-def run(pilot, port, workspace=None, eventhub=None, diagnostics=None):
-    server = Server(pilot, port, workspace, eventhub, diagnostics)
+def run(pilot, port, workspace=None, eventhub=None, diagnostics=None, fleet=None):
+    server = Server(pilot, port, workspace, eventhub, diagnostics, fleet)
     print(f"Open http://127.0.0.1:{server.server_port}/login?token={server.token}", flush=True)
     print("Single-owner preview. Keep this login link private. Ctrl+C stops monitoring.", flush=True)
     if pilot is not None:
         pilot.start()
+    if fleet is not None: fleet.start()
     try:
         server.serve_forever()
     except KeyboardInterrupt:
         pass
     finally:
         server.server_close()
+        if fleet is not None: fleet.close()
         if pilot is not None:
             pilot.close()
 
