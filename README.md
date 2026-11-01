@@ -13,7 +13,7 @@ API, model, Kubernetes cluster, n8n or separate monitoring server is required fo
 this first flow. Optional local AI explanations are advisory only. This is not a
 production-certified autonomous DevOps engineer.
 
-**Verified:** Python 3.11/3.12/3.13 checks (22 unit/local-HTTP tests), installed
+**Historical initial-release verification:** Python 3.11/3.12/3.13 checks (22 unit/local-HTTP tests), installed
 setup smoke, desktop/mobile Chromium acceptance, three real disposable Docker
 tests and real systemd start/crash-recovery acceptance passed. A full host reboot
 and external notification delivery have not been tested. [Evidence and remaining limits](docs/VALIDATION.md).
@@ -22,6 +22,12 @@ returned HTTP 200, stopping `ops-pilot-demo` triggered findings, and the dashboa
 reported **Recovery checks passed** after the repair flow. This is user-reported
 demo evidence, not an independently captured production test. CloudLaunch/PharmaCare
 was not involved.
+
+## Current application scope and owner-managed installation
+
+The current development review is [PR #7](https://github.com/Vishnu063/ops-pilot/pull/7). Use the [current feature inventory](docs/CURRENT-SCOPE.md), [owner deployment runbook](docs/OWNER-RUNBOOK.md) and [release gates](docs/RELEASE-REVIEW.md). Older counts below are historical evidence, not validation of the latest commit. The owner performs deployment later; none has been executed by this review. External auto-deployment safety remains UNKNOWN, so the PR stays draft. Coolify remains disabled and live v4.5.3 compatibility is UNVERIFIED.
+
+The follow-up hardens bounded private Docker configuration reads and agency backup/restore paths, hash memory use and SQLite URI handling, with eighteen new regressions. No new provider, recovery operation, public endpoint or dependency was added. Existing state/schema formats are preserved.
 
 ## New: Freelance studio + n8n control centre
 
@@ -47,10 +53,10 @@ Docker users can skip step 1.
 ### 1. Install prerequisites and enable Docker access
 
 ```bash
-sudo apt update
-sudo apt install -y git curl python3 python3-venv docker.io
-sudo systemctl enable --now docker
-sudo usermod -aG docker "$USER"
+$ sudo apt update
+$ sudo apt install -y git curl python3 python3-venv docker.io
+$ sudo systemctl enable --now docker
+$ sudo usermod -aG docker "$USER"
 ```
 
 Disconnect and reconnect SSH so the Docker group takes effect. Alternatively,
@@ -61,7 +67,7 @@ its old permissions. Docker group membership grants powerful host access.
 Check access without sudo:
 
 ```bash
-docker ps -a --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
+$ docker ps -a --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
 ```
 
 An empty table means Docker works but there are no containers on this server.
@@ -75,8 +81,8 @@ actual readiness URL. Do not assume a container from another EC2 is present here
 For a first test on an empty server, create this separate nginx demo:
 
 ```bash
-docker run -d --name ops-pilot-demo -p 127.0.0.1:8080:80 nginx:alpine
-curl -I http://127.0.0.1:8080/
+$ docker run -d --name ops-pilot-demo -p 127.0.0.1:8080:80 nginx:alpine
+$ curl -I http://127.0.0.1:8080/
 ```
 
 This downloads a small web-server image and serves its default welcome page only
@@ -92,9 +98,9 @@ same port in the health URL. Do not open 8080 in the security group for this dem
 Clone once into your chosen parent directory:
 
 ```bash
-git clone https://github.com/Vishnu063/ops-pilot.git
-cd ops-pilot
-bash start.sh setup
+$ git clone https://github.com/Vishnu063/ops-pilot.git
+$ cd ops-pilot
+$ bash start.sh setup
 ```
 
 If already cloned, enter the existing directory containing `start.sh`; do not
@@ -116,7 +122,7 @@ changing it. Stop an existing Ops Pilot server before changing configuration.
 Start the dashboard and leave this terminal running:
 
 ```bash
-bash start.sh
+$ bash start.sh
 ```
 
 It prints a private login URL beginning with
@@ -132,7 +138,7 @@ Leave the server terminal open. Open a **second terminal on your Mac/computer**
 and run your usual SSH command with local forwarding added:
 
 ```bash
-ssh -N -o ExitOnForwardFailure=yes -L 8767:127.0.0.1:8767 -i /path/to/key.pem ubuntu@YOUR_EC2_PUBLIC_IP
+$ ssh -N -o ExitOnForwardFailure=yes -L 8767:127.0.0.1:8767 -i /path/to/key.pem ubuntu@YOUR_EC2_PUBLIC_IP
 ```
 
 Replace the key path and public IP with your existing connection details. If
@@ -155,7 +161,7 @@ First confirm the dashboard identifies `ops-pilot-demo` and shows **Endpoint
 checks passed**. In another EC2 shell, deliberately stop only our demo:
 
 ```bash
-docker stop ops-pilot-demo
+$ docker stop ops-pilot-demo
 ```
 
 On the dashboard:
@@ -174,8 +180,8 @@ It proves this stopped-container flow, not general failure repair or AI quality.
 For independent confirmation after recovery, run in an EC2 shell:
 
 ```bash
-docker ps --filter name=ops-pilot-demo
-curl -I http://127.0.0.1:8080/
+$ docker ps --filter name=ops-pilot-demo
+$ curl -I http://127.0.0.1:8080/
 ```
 
 If abandoning the test with the demo still stopped, restore it manually with
@@ -230,8 +236,8 @@ On an Ubuntu/systemd server, finish setup first. Stop foreground Ops Pilot with
 Docker-enabled user (the installer uses sudo only for systemd installation):
 
 ```bash
-git pull --ff-only
-bash start.sh --update check
+$ git pull --ff-only
+$ bash start.sh --update check
 ```
 
 The diagnostic command keeps your existing configuration. Exit code 1 means it
@@ -241,14 +247,14 @@ Then:
 
 ```bash
 # Optional: inspect the unit before installation
-bash scripts/install-service.sh --print
+$ bash scripts/install-service.sh --print
 
 # Install, start, and enable monitoring for future boots
-bash scripts/install-service.sh
-sudo systemctl status ops-pilot --no-pager
+$ bash scripts/install-service.sh
+$ sudo systemctl status ops-pilot --no-pager
 
 # Read the new private login URL on your own terminal
-sudo journalctl -u ops-pilot -n 15 --no-pager
+$ sudo journalctl -u ops-pilot -n 15 --no-pager
 ```
 
 The installer uses the current repository location and Linux user, default
@@ -266,19 +272,19 @@ login URL. Journal access exposes that URL: read it locally and do not share log
 
 ```bash
 # Update an installed background service (preserves app configuration/history)
-sudo systemctl stop ops-pilot
-git pull --ff-only
-bash start.sh --update check
-sudo systemctl start ops-pilot
+$ sudo systemctl stop ops-pilot
+$ git pull --ff-only
+$ bash start.sh --update check
+$ sudo systemctl start ops-pilot
 
 # Stop monitoring or disable automatic startup
-sudo systemctl stop ops-pilot
-sudo systemctl disable ops-pilot
+$ sudo systemctl stop ops-pilot
+$ sudo systemctl disable ops-pilot
 
 # Remove the service only; keep your configuration and incident history
-sudo systemctl disable --now ops-pilot
-sudo rm /etc/systemd/system/ops-pilot.service
-sudo systemctl daemon-reload
+$ sudo systemctl disable --now ops-pilot
+$ sudo rm /etc/systemd/system/ops-pilot.service
+$ sudo systemctl daemon-reload
 ```
 
 `check` can return 1 for findings or 2 for collection errors; read its output.
@@ -377,7 +383,7 @@ evidence; it cannot approve, generate or execute a repair. No model is downloade
 automatically. With an installed local model, pass its exact name:
 
 ```bash
-bash start.sh --ai-model YOUR_INSTALLED_LOCAL_MODEL
+$ bash start.sh --ai-model YOUR_INSTALLED_LOCAL_MODEL
 ```
 
 The reused adapter requests CPU inference, a small context and immediate model
@@ -411,14 +417,14 @@ existing authorized configuration; Docker privileges can be equivalent to root.
 
 ```bash
 # Investigate once and print the filtered report; no repair
-bash start.sh check
+$ bash start.sh check
 
 # Use a different dashboard port (update the SSH tunnel too)
-bash start.sh --port 8768
+$ bash start.sh --port 8768
 
 # Update project first, then refresh its installation
-git pull --ff-only
-bash start.sh --update
+$ git pull --ff-only
+$ bash start.sh --update
 ```
 
 `check` exits 0 for no supported findings, 1 for findings, 2 for setup/collection
@@ -430,9 +436,9 @@ webhook alerts require explicit configuration below.
 ## Test before using on customer systems
 
 ```bash
-python3 -m venv .venv
-.venv/bin/python -m pip install -e .
-.venv/bin/python -m unittest discover -s tests -v
+$ python3 -m venv .venv
+$ .venv/bin/python -m pip install -e .
+$ .venv/bin/python -m unittest discover -s tests -v
 ```
 
 The default suite simulates Docker and uses real local HTTP endpoints. The actual
@@ -441,7 +447,7 @@ introduces outages, tests approval/replay/state drift and failed HTTP recovery,
 then removes its own containers. Run only on a development host with local Docker:
 
 ```bash
-OPS_PILOT_DOCKER_LAB=1 .venv/bin/python -m unittest discover -s tests -p test_docker_lab.py -v
+$ OPS_PILOT_DOCKER_LAB=1 .venv/bin/python -m unittest discover -s tests -p test_docker_lab.py -v
 ```
 
 The lab downloads a Python container image. CI records its resolved digest and
@@ -456,11 +462,11 @@ Ops Pilot. The browser flow uses simulated Docker plus real HTTP/SQLite. The
 separate Docker lab above tests actual container operations.
 
 ```bash
-source .venv/bin/activate
-.venv/bin/python -m pip install playwright==1.58.0
-.venv/bin/python -m playwright install chromium
-.venv/bin/python tests/browser_acceptance.py
-.venv/bin/python scripts/installation_smoke.py
+$ source .venv/bin/activate
+$ .venv/bin/python -m pip install playwright==1.58.0
+$ .venv/bin/python -m playwright install chromium
+$ .venv/bin/python tests/browser_acceptance.py
+$ .venv/bin/python scripts/installation_smoke.py
 ```
 
 On Linux, Playwright may need system browser libraries. CI installs them with
@@ -508,7 +514,7 @@ Ops Pilot now has an opt-in event inbox and `/ecosystem` owner desk around the e
 
 The lightweight cross-project failure-to-recovery path has passed real disposable CI, including source-role denial, no repair before approval, restart, consecutive HTTP/actual-metric recovery, alert resolution, report export and cleanup. [Complete five-repository results, exact implementation SHAs, measurements and remaining gates](docs/ECOSYSTEM-RESULTS.md). That historical lightweight run excludes Jenkins/Kubernetes/Grafana/models. The follow-on owned Jenkins/Kind and strict 8 GB acceptance is recorded in [current readiness](docs/PUBLIC-READINESS.md); customer/external-provider and concurrent production capacity remain separate gates.
 
-## Self-hosted read-only diagnostics (follow-on PR #6)
+## Self-hosted read-only diagnostics
 
 [Installation, private setup wizard and permission guide](docs/SELF-HOSTING.md) · [Current readiness, acceptance evidence and limitations](docs/PUBLIC-READINESS.md). The optional diagnostics desk reuses scoped native Kubernetes/Jenkins/EC2/Helm/ArgoCD/monitoring collectors and imports bounded Trivy metadata. Only the existing Docker workflow can execute a repair after separate exact owner approval. Single-owner loopback operation remains the supported boundary; multi-user and public binding are disabled.
 
@@ -532,13 +538,13 @@ Start with `ops-pilot fleet --fleet-config <private-profile>` or add `--fleet-co
 
 The [Coolify quality review](docs/coolify/QUALITY-REVIEW.md) records confirmed receipt-binding, stale-observation, approval-supersession and recovery-evidence defects and their regressions. Official v4.5.3 source compatibility is reviewed separately from real-instance proof. Live Coolify recovery still requires separate authorization; no production validation is claimed.
 
-## Core read-only diagnostics continuation (unpublished)
+## Historical core read-only diagnostics continuation
 
 Scoped GitHub Actions run/job/history evidence, optional Jenkins stages/history, account-checked selected AWS reads and fresh scoped Prometheus samples extend the existing diagnostics desk. Docker image/start/health metadata is projected without changing the approved recovery engine. The diagnostics page shows configured scope, collector freshness and latest-report search. No pipeline, Kubernetes or AWS mutation is enabled.
 
 Current verification: **113 passed / 25 socket-blocked errors / 4 Docker skips** across 142 unit cases, including 18 new deterministic tests and the existing 41 Coolify tests. Five browser runners are blocked by local socket restrictions; pytest, Bandit and pip-audit are unavailable. These results do not establish real-service compatibility, 8 GB capacity or production readiness. Existing CI evidence above is historical. [Feature inventory and gaps](docs/core/INVENTORY.md) · [Changes, test evidence and release gates](docs/core/IMPLEMENTATION.md) · [Private configuration and acceptance runbook](docs/core/RUNBOOK.md).
 
-### Latest master execution increment (local, release HOLD)
+### Historical local master execution increment
 
 Private SQLite preparation now rejects linked/non-regular state and sidecar files, enforces owner-only permissions and closes transaction connections reliably. Optional `docker` diagnostics adds an exact-container/daemon-bound, bounded CPU/memory sample; no additional repair operation is enabled. Diagnostics scope search is corrected and a status filter is available.
 

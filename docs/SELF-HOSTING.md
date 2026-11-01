@@ -2,22 +2,24 @@
 
 Ops Pilot is installable software for one trusted local engineer. It is not a hosted service or a verified multi-tenant system. The HTTP server binds only to `127.0.0.1`; there is no public bind or multi-user switch. Use a separate OS account, process, private state directory and native credential profile for each trust boundary. An environment ID separates report storage, not hostile users sharing one account. Docker access is effectively host administration: never publish its socket or mount customer sockets into a public web service.
 
+Use [the owner runbook](OWNER-RUNBOOK.md) for exact revision selection, supported Python versions, health checks, backups, upgrades and rollback. [Current scope](CURRENT-SCOPE.md) separates implementation from live acceptance. Deployment is an owner action; these instructions were not executed against production.
+
 ## Install and connect
 
 Use Linux with Python 3.11+, Git, the venv package for your Python, and the native tools you explicitly need. Docker monitoring requires access to your selected local/SSH Docker context. No Kubernetes cluster, Jenkins, cloud account, scanner, Grafana or model is installed automatically.
 
 ```sh
-git clone https://github.com/Vishnu063/ops-pilot.git
-cd ops-pilot
-# Until PR #6 is merged, review and check out feat/public-selfhosted-readiness.
-bash start.sh setup
-bash start.sh serve
+$ git clone https://github.com/Vishnu063/ops-pilot.git
+$ cd ops-pilot
+# Select the exact reviewed commit using OWNER-RUNBOOK.md before installation; do not assume main contains PR #7.
+$ bash start.sh setup
+$ bash start.sh serve
 ```
 
 The existing wizard records one exact container and its application HTTP/HTTPS endpoint, writes configuration with mode `0600`, and performs no repair. Open the private login link printed by `serve`. The random owner session rotates when the server restarts. Do not share the link or expose the port through a public tunnel. Sessions are local owner capabilities, not individual user accounts. Access a remote self-hosted instance through an authenticated SSH tunnel:
 
 ```sh
-ssh -N -L 8767:127.0.0.1:8767 your-authorized-host
+$ ssh -N -L 8767:127.0.0.1:8767 your-authorized-host
 ```
 
 Use the forwarded `127.0.0.1:8767` URL and private login token. Retain SSH authentication and network firewall controls. TLS/public proxy deployments, federated login, tenant administration and hostile-user isolation have not been accepted. Multi-user operation stays disabled.
@@ -25,9 +27,9 @@ Use the forwarded `127.0.0.1:8767` URL and private login token. Retain SSH authe
 ## Optional diagnostics wizard
 
 ```sh
-bash start.sh setup-diagnostics --diagnostics-config "$HOME/.config/ops-pilot/diagnostics.json"
-bash start.sh diagnostics --diagnostics-config "$HOME/.config/ops-pilot/diagnostics.json" --tool kubernetes
-bash start.sh serve --diagnostics-config "$HOME/.config/ops-pilot/diagnostics.json"
+$ bash start.sh setup-diagnostics --diagnostics-config "$HOME/.config/ops-pilot/diagnostics.json"
+$ bash start.sh diagnostics --diagnostics-config "$HOME/.config/ops-pilot/diagnostics.json" --tool kubernetes
+$ bash start.sh serve --diagnostics-config "$HOME/.config/ops-pilot/diagnostics.json"
 ```
 
 Choose an environment ID, a collector and exact scope names. The wizard neither connects nor overwrites an existing file. CLI exit codes are `0` for no findings in the collector's scope, `1` for findings and `2` for inconclusive/configuration errors. No-findings does not establish end-to-end application health. The dashboard's **Read-only diagnostics** link collects and downloads reports; it never exposes a shell, context selector, arbitrary endpoint or repair API. Missing/partial evidence is inconclusive. Only the separately configured application monitor/incident desk can propose an allowlisted Docker repair.

@@ -7,6 +7,8 @@ import tempfile
 import unittest
 from ops_pilot.storage import private_database, PrivateConnection
 from ops_pilot.runtime import Runtime
+from types import SimpleNamespace
+from unittest.mock import Mock
 
 CONFIG={'docker_context':'default','container':'owned','health_url':'http://127.0.0.1:9000'}
 
@@ -84,3 +86,53 @@ class StorageTests(unittest.TestCase):
         directory=self.root/'diagnostics'/'lab';directory.mkdir(parents=True);(directory/'reports.sqlite3').symlink_to(target)
         with self.assertRaises(ValueError):Diagnostics(config,self.root)
         self.assertEqual(target.read_text(),'unchanged')
+
+    def hub(self, directory=None):
+        from ops_pilot.ecosystem import EventHub
+        pilot=SimpleNamespace(config={'name':'synthetic','container':'owned'},health={'url':'http://127.0.0.1:8080'},action=Mock())
+        return EventHub(pilot,directory or self.root,'synthetic')
+
+    def test_ecosystem_symlinked_directory_is_refused_before_chmod(self):
+        victim=self.root/'victim';victim.mkdir();victim.chmod(0o755)
+        (self.root/'ecosystem').symlink_to(victim,target_is_directory=True)
+        with self.assertRaises(ValueError):self.hub()
+        self.assertEqual(0o755,victim.stat().st_mode&0o777)
+        self.assertFalse((victim/'events.sqlite3').exists())
+
+    def test_ecosystem_database_and_journal_links_are_refused(self):
+        for kind in ('symlink','hardlink','journal'):
+            with self.subTest(kind=kind):
+                directory=self.root/kind;state=directory/'ecosystem';state.mkdir(parents=True)
+                victim=directory/'victim';victim.write_text('unchanged');victim.chmod(0o644)
+                path=state/'events.sqlite3'
+                if kind=='hardlink':os.link(victim,path)
+                else:Path(str(path)+('-journal' if kind=='journal' else '')).symlink_to(victim)
+                with self.assertRaises(ValueError):self.hub(directory)
+                self.assertEqual('unchanged',victim.read_text())
+                self.assertEqual(0o644,victim.stat().st_mode&0o777)
+
+    def test_ecosystem_connection_rechecks_replacement_and_closes(self):
+        hub=self.hub();db=hub.connect()
+        with db:self.assertEqual((1,),db.execute('SELECT 1').fetchone())
+        with self.assertRaises(sqlite3.ProgrammingError):db.execute('SELECT 1')
+        hub.path.unlink();victim=self.root/'victim';victim.write_text('unchanged')
+        hub.path.symlink_to(victim)
+        with self.assertRaises(ValueError):hub.state()
+        self.assertEqual('unchanged',victim.read_text())
+
+    def test_ecosystem_reopen_repairs_modes_and_preserves_audit(self):
+        hub=self.hub()
+        with hub.connect() as db:hub._audit(db,None,'test','synthetic',{'observed':True})
+        hub.path.chmod(0o666);hub.root.chmod(0o755)
+        reopened=self.hub()
+        self.assertEqual(0o600,reopened.path.stat().st_mode&0o777)
+        self.assertEqual(0o700,reopened.root.stat().st_mode&0o777)
+        self.assertEqual('synthetic',reopened.state()['audit'][0]['action'])
+
+    def test_ecosystem_operation_lock_cannot_follow_symlink(self):
+        hub=self.hub();victim=self.root/'victim';victim.write_text('unchanged')
+        (hub.root/'operation.lock').symlink_to(victim)
+        payload=dict(incident_id='a'*24,revision=1,action='investigate',plan_id=None)
+        with self.assertRaises(ValueError):hub.action(payload)
+        self.assertFalse(hub.pilot.action.called)
+        self.assertEqual('unchanged',victim.read_text())

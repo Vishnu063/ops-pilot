@@ -3,6 +3,7 @@ import json
 import os
 from pathlib import Path
 import re
+import stat
 import tempfile
 from triage.health import validate_health
 
@@ -38,15 +39,36 @@ def validate(value):
 
 
 def load(path):
-    path = Path(path).expanduser()
-    if path.stat().st_size > 8192:
-        raise ValueError("Configuration exceeds 8 KiB")
-    return validate(json.loads(path.read_text()))
+    path = configuration_path(path)
+    descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    try:
+        info = os.fstat(descriptor)
+        if (not stat.S_ISREG(info.st_mode) or info.st_nlink != 1
+                or info.st_uid != os.getuid() or info.st_mode & 0o077):
+            raise ValueError("Configuration must be a private, owner-controlled regular file")
+        with os.fdopen(descriptor, 'rb', closefd=False) as stream:
+            raw = stream.read(8193)
+        if len(raw) > 8192:
+            raise ValueError("Configuration exceeds 8 KiB")
+        return validate(json.loads(raw))
+    finally:
+        os.close(descriptor)
+
+
+def configuration_path(path):
+    path = Path(path).expanduser().absolute()
+    if any(part.is_symlink() for part in (path, *path.parents)):
+        raise ValueError("Configuration paths cannot contain symlinks")
+    return path
 
 
 def save(path, value):
     value, _ = validate(value)
-    path = Path(path).expanduser()
+    path = configuration_path(path)
+    if path.exists():
+        info = path.lstat()
+        if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1 or info.st_uid != os.getuid():
+            raise ValueError("Existing configuration must be an owner-controlled regular file with one link")
     path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     descriptor, name = tempfile.mkstemp(dir=path.parent, prefix=".ops-pilot-")
     try:
