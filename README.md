@@ -546,4 +546,9 @@ Latest unit result: **156 attempted: 127 passed, 25 socket-blocked errors, 4 Doc
 
 ## Current published release review
 
-The implementation is published in [draft PR #7](https://github.com/Vishnu063/ops-pilot/pull/7). See [release gates and security-audit scope](docs/RELEASE-REVIEW.md) and the PR checks for the exact current head. Earlier local validation/publication notes remain historical evidence. No disposable Coolify instance is available, so live v4.5.3 validation and production release remain on HOLD. No merge or deployment is authorized.
+The implementation is published in [PR #7](https://github.com/Vishnu063/ops-pilot/pull/7). See [release gates and security-audit scope](docs/RELEASE-REVIEW.md) and the PR checks for the exact current head. Earlier local validation/publication notes remain historical evidence. No disposable Coolify instance is available, so live v4.5.3 validation and production release remain on HOLD. No merge or deployment is authorized.
+
+
+### Coolify is disabled in the default core
+
+Without an explicit private `--fleet-config`, Ops Pilot constructs no Coolify provider, makes no Coolify API requests, and refuses fleet recovery actions. Token environment bindings and a profile in the documented default location do not enable it. Tests enforce the disabled state. Live Coolify v4.5.3 compatibility is **UNVERIFIED** and deferred until an authorized disposable instance is tested; keep the optional integration disabled for normal operation. A core merge does not authorize Coolify enablement or production deployment. See [core merge and optional-feature gates](docs/RELEASE-REVIEW.md).
