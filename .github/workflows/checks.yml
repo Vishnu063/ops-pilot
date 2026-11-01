@@ -11,12 +11,15 @@ concurrency:
   cancel-in-progress: true
 jobs:
   tests:
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python: ['3.11', '3.12', '3.13']
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
@@ -35,12 +38,18 @@ jobs:
           node --check /tmp/dashboard.js
           python -c 'from pathlib import Path; s=Path("ops_pilot/freelance.html").read_text(); Path("/tmp/freelance.js").write_text(s.split("<script>")[1].split("</script>")[0])'
           node --check /tmp/freelance.js
+          python -c 'from pathlib import Path; s=Path("ops_pilot/coolify.html").read_text(); Path("/tmp/coolify.js").write_text(s.split("<script>")[1].split("</script>")[0])'
+          node --check /tmp/coolify.js
+          python -c 'from pathlib import Path; s=Path("ops_pilot/diagnostics.html").read_text(); Path("/tmp/diagnostics.js").write_text(s.split("<script>")[1].split("</script>")[0])'
+          node --check /tmp/diagnostics.js
           python scripts/check-freelance-workflow.py
   docker-lab:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -69,6 +78,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -80,6 +91,7 @@ jobs:
           python tests/freelance_browser.py
           python tests/ecosystem_browser.py
           python tests/diagnostics_browser.py
+          python tests/coolify_browser.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -88,6 +100,7 @@ jobs:
             browser-evidence/
             freelance-evidence/
             diagnostic-evidence/
+            coolify-evidence/
           if-no-files-found: ignore
           retention-days: 30
   service-lab:
@@ -95,6 +108,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -118,6 +133,8 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'

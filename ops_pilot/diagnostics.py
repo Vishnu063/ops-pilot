@@ -14,8 +14,10 @@ from triage.evidence import annotate, deep_evidence, log_signals
 from triage.health import check_health
 from triage.integrations import ToolAdapter, redact
 from triage.ecosystem import k8sgpt
+from .storage import private_database, PrivateConnection
+from .read_diagnostics import (split_config, scope, signatures, signal_findings, github_actions, jenkins_extra, aws_account, aws_extra, prometheus_job, EvidenceError, finding, docker_metrics)
 
-TOOLS = frozenset(('kubernetes', 'jenkins', 'aws', 'helm', 'argocd', 'prometheus', 'grafana'))
+TOOLS = frozenset(('docker', 'kubernetes', 'jenkins', 'github-actions', 'aws', 'helm', 'argocd', 'prometheus', 'grafana'))
 
 
 def optional_analysis(context, namespace, enabled):
@@ -35,9 +37,9 @@ def wizard(path):
         raise ValueError('Diagnostics configuration already exists; review it locally rather than overwrite it')
     print('Read-only diagnostics: configure only an environment you are authorized to inspect. No connection runs now.')
     environment = input('Environment ID: ').strip()
-    tool = input('Collector (kubernetes, jenkins, aws, helm, argocd, prometheus, grafana): ').strip()
-    fields = {'kubernetes':('context','namespace','resource'), 'jenkins':('base_url','resource'),
-              'aws':('profile','region','resource'), 'helm':('context','namespace','resource'),
+    tool = input('Collector (docker, kubernetes, jenkins, github-actions, aws, helm, argocd, prometheus, grafana): ').strip()
+    fields = {'docker':('context','resource'), 'kubernetes':('context','namespace','resource'), 'jenkins':('base_url','resource'),
+              'github-actions':('owner','repository','resource','base_url'), 'aws':('profile','region','resource'), 'helm':('context','namespace','resource'),
               'argocd':('server','resource'), 'prometheus':('base_url',), 'grafana':('base_url',)}
     if tool not in fields:
         raise ValueError('Choose a documented read-only collector')
@@ -71,7 +73,8 @@ def configuration(path):
     if not isinstance(value['tools'], dict) or not value['tools'] or set(value['tools']) - TOOLS:
         raise ValueError('Select documented read-only diagnostic profiles')
     for tool, config in value['tools'].items():
-        adapter = ToolAdapter(tool, config)
+        native, extra = split_config(tool, config)
+        adapter = ToolAdapter(tool, native)
         for field in ('context', 'namespace', 'resource', 'profile', 'region'):
             if field in config and (not isinstance(config[field], str) or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,252}', config[field])):
                 raise ValueError('Use exact diagnostic scope names without wildcards or command syntax')
@@ -87,8 +90,6 @@ class Diagnostics:
         self.config = configuration(config)
         self.environment = self.config['environment']
         self.root = Path(directory) / 'diagnostics' / self.environment
-        self.root.mkdir(mode=0o700, parents=True, exist_ok=True)
-        self.root.chmod(0o700)
         self.path = self.root / 'reports.sqlite3'
         self.lock = threading.Lock()
         with self.connect() as db:
@@ -99,11 +100,12 @@ class Diagnostics:
         self.path.chmod(0o600)
 
     def connect(self):
-        return sqlite3.connect(self.path, timeout=10)
+        return sqlite3.connect(private_database(self.path), timeout=10, factory=PrivateConnection)
 
     def _save(self, tool, report):
         report.update(schema_version='1.0', id=uuid.uuid4().hex, environment=self.environment,
-                      read_only=True, generated_at=time.time(), actions=[],
+                      read_only=True, generated_at=time.time(), actions=[], read_scope=scope(self.config['tools'].get(tool,{})),
+                      data_origin='owner-supplied scanner metadata' if tool=='trivy' else 'configured collector; live only when actually invoked',
                       scope='Configured read-only evidence. Findings are hypotheses, not proof of root cause or recovery. Docker repair uses the separate exact-target owner approval workflow.')
         raw = json.dumps(report)
         if len(raw.encode()) > 262144:
@@ -126,11 +128,35 @@ class Diagnostics:
         if not self.lock.acquire(blocking=False):
             raise ValueError('A diagnostic collection is already running')
         try:
-            adapter = ToolAdapter(tool, self.config['tools'][tool])
+            native, extra = split_config(tool,self.config['tools'][tool])
+            if tool=='docker':
+                from .service import DockerAdapter
+                adapter=DockerAdapter(native)
+            else:adapter = ToolAdapter(tool, native)
             try:
-                snapshot = adapter.collect()
+                account=aws_account(adapter,extra) if tool=='aws' else None
+                github=None;prometheus=None
+                if tool=='github-actions':
+                    snapshot,github,findings=github_actions(adapter,extra)
+                elif tool=='prometheus' and extra.get('job'):
+                    prometheus=prometheus_job(adapter,extra['job'])
+                    snapshot=dict(tool=tool,collected_at=time.time(),observations={'status':['success'],'job':[extra['job']],'target_health':['up' if prometheus['healthy'] else 'down']},errors=[],truncated=False,empty=False)
+                    findings=adapter.findings(snapshot)
+                    if not prometheus['healthy']:findings.append(finding('prometheus:down','Configured Prometheus job has down targets','Fresh scoped up sample is zero','Inspect the configured scrape targets and application endpoint; missing samples cannot establish recovery.'))
+                else:
+                    snapshot=adapter.collect();findings=adapter.findings(snapshot)
                 report = dict(tool=tool, target=adapter.target, snapshot=snapshot,
-                              findings=adapter.findings(snapshot), deep_evidence=deep_evidence(adapter))
+                              findings=findings, deep_evidence=deep_evidence(adapter))
+                if tool=='docker' and extra.get('metrics'):
+                    report['resources'],resource_findings=docker_metrics(adapter)
+                    report['findings'].extend(resource_findings)
+                if github is not None:
+                    report['ci']=github;report['deep_evidence']['errors'].extend(github['errors'])
+                if prometheus is not None:report['monitoring']=prometheus
+                if tool=='aws':
+                    report['aws_evidence'],extra_findings=aws_extra(adapter,extra,account)
+                    report['findings'].extend(extra_findings)
+                    report['deep_evidence']['errors'].extend(report['aws_evidence']['errors'])
                 report['findings'].extend(report['deep_evidence'].get('findings', []))
                 if tool == 'aws' and 'impaired' in snapshot['observations'].get('instance_check', []):
                     report['findings'].append(dict(code='aws:instance-check', title='EC2 instance reachability check impaired',
@@ -153,10 +179,14 @@ class Diagnostics:
                         raise ValueError('Jenkins build identity is unavailable')
                     try:
                         raw, _ = adapter.request('/job/$resource/' + str(number) + '/logText/progressiveText?start=0')
-                        report['deep_evidence'] = dict(supported=True, log_signals=log_signals(raw), errors=[],
+                        report['deep_evidence'] = dict(supported=True, log_signals=signatures(raw), errors=[],
                             scope='Bounded numbered-build console signature counts only; raw text is discarded. First failing stage is not inferred from signatures.')
                     except (ValueError, RuntimeError, OSError):
                         report['deep_evidence']['errors'].append('Numbered build log evidence unavailable or exceeds bounds')
+                    report['findings'].extend(signal_findings(report['deep_evidence'].get('log_signals',{})))
+                    if extra.get('history') or extra.get('stages'):
+                        report['ci']=jenkins_extra(adapter,extra,number)
+                        report['deep_evidence']['errors'].extend(report['ci']['errors'])
                 report['application_health'] = check_health(self.config['tools'][tool].get('application_health'))
                 if report['application_health'].get('healthy') is False:
                     report['findings'].append(dict(code='application-health', title='Configured HTTP health policy failed', evidence='Configured endpoint did not satisfy its bounded policy', likely_cause='Application, routing, authentication or dependencies may be failing.', next_steps=['Check endpoint samples and dependencies before any repair.']))
@@ -164,6 +194,8 @@ class Diagnostics:
                 if tool == 'kubernetes':
                     report['k8sgpt'] = optional_analysis(adapter.config['context'], adapter.config['namespace'], os.environ.get('OPS_PILOT_K8SGPT') == '1')
                 annotate(report)
+            except EvidenceError as exc:
+                report=dict(tool=tool,target=adapter.target,status='inconclusive',findings=[],errors=[str(exc)])
             except (ValueError, RuntimeError, OSError, TypeError, KeyError, IndexError, AttributeError):
                 report = dict(tool=tool, target=adapter.target, status='inconclusive', findings=[],
                               errors=['Read-only evidence unavailable; check scoped permissions, native tools and endpoint compatibility.'])
@@ -208,7 +240,14 @@ class Diagnostics:
     def state(self):
         with self.connect() as db:
             rows = db.execute('SELECT payload FROM reports ORDER BY at DESC LIMIT 8').fetchall()
+            attempts={};successes={}
+            for tool,at,payload in db.execute('SELECT tool,at,payload FROM reports ORDER BY at DESC LIMIT 2000'):
+                if tool not in self.config['tools']:continue
+                attempts.setdefault(tool,{'at':at,'status':json.loads(payload).get('status','unknown')})
+                if tool not in successes and json.loads(payload).get('status') not in ('inconclusive',None):successes[tool]=at
+                if len(successes)==len(self.config['tools']):break
         return dict(environment=self.environment, tools=sorted(self.config['tools']), read_only=True, multi_user=False,
+                    collectors=[dict(tool=tool,scope=scope(config),last_attempt=attempts.get(tool),last_successful_collection=successes.get(tool)) for tool,config in self.config['tools'].items()],
                     reports=[json.loads(r[0]) for r in rows], history_window=8)
 
     def report(self, ident):

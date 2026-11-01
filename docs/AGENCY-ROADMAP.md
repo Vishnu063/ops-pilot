@@ -67,3 +67,15 @@ Next gates remain actual Jenkins/Trivy, customer authorization, cluster/GitOps/H
 ## Public self-hosted follow-on review (2026-10-25)
 
 Merged ecosystem PR #5 stays merged. New PR #6 adds optional native read-only diagnostics, a private setup wizard, bounded reports/HTTP concurrency and constrained real-failure acceptance; see [readiness evidence](PUBLIC-READINESS.md). The existing 50-step agency records remain intact. Multi-user/public exposure, external cloud/provider access, concurrent production capacity and customer acceptance remain gated by their own evidence.
+
+## Optional Coolify continuation (review branch)
+
+Repository implementation: documented API client, explicit fleet inventory/thresholds, secure evidence, target-bound approval/verification, provider-confirmed notification adapter, responsive owner UI and mock-compatible acceptance. Existing agency work is preserved. [Audit](coolify/AUDIT.md), [validation and exact remaining real-instance gates](coolify/ACCEPTANCE.md), [future service packaging](coolify/PACKAGES.md). This does not complete customer onboarding, payment, production deployment, live Coolify/Telegram acceptance or shared multi-tenant isolation. No merge is authorized by this continuation.
+
+### Core diagnostic continuation — local review, release HOLD
+
+Read-only GitHub Actions, bounded Jenkins stages/history, selected account-checked AWS evidence, scoped fresh Prometheus and diagnostics scope/freshness/search are implemented with deterministic regressions. Preserve the existing Coolify implementation and quality patches as earlier integration stages. Publication, new-head CI, security scanners, socket/browser/Docker acceptance, current resource measurements and disposable Coolify v4.5.3 validation remain gates. Cross-domain automatic incident correlation and comprehensive resource/networking diagnosis remain pending. See `docs/core/IMPLEMENTATION.md` for exact scope and counts.
+
+### Master execution follow-up — local, release HOLD
+
+Owner-store private-file checks and deterministic SQLite closure are implemented with nine filesystem/transaction regressions. Optional pinned Docker CPU/memory diagnostics adds five regression tests. Scope search and status filtering are improved. Current full-suite result is 127 pass / 25 socket-blocked errors / four Docker skips; 41 Coolify tests pass. Publication, new-head CI, scanners, real-service/browser acceptance and resource sizing remain outstanding. See `docs/core/MASTER-EXECUTION.md` for phase statuses and intentionally incomplete requirements.

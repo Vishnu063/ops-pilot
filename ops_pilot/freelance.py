@@ -10,6 +10,7 @@ from pathlib import Path
 import re
 import secrets
 import sqlite3
+from .storage import private_database
 import threading
 import zipfile
 from . import agency
@@ -65,12 +66,8 @@ class PrivateConnection(sqlite3.Connection):
 class Workspace:
     def __init__(self, directory):
         self.directory = Path(directory).expanduser() / 'freelance'
-        self.directory.mkdir(parents=True, exist_ok=True, mode=0o700)
         self.path = self.directory / 'workspace.sqlite3'
-        fd = os.open(self.path, os.O_CREAT | os.O_WRONLY, 0o600)
-        os.close(fd)
-        os.chmod(self.directory, 0o700)
-        os.chmod(self.path, 0o600)
+        private_database(self.path)
         self.lock = threading.RLock()
         with self.connect() as db:
             db.execute('CREATE TABLE IF NOT EXISTS jobs (id TEXT PRIMARY KEY, source_key TEXT UNIQUE, payload TEXT NOT NULL)')
@@ -97,7 +94,7 @@ class Workspace:
 
 
     def connect(self):
-        return sqlite3.connect(self.path, timeout=10, factory=PrivateConnection)
+        return sqlite3.connect(private_database(self.path), timeout=10, factory=PrivateConnection)
 
     def get(self, job_id):
         if not isinstance(job_id, str) or not re.fullmatch(r'[a-f0-9]{12}', job_id):

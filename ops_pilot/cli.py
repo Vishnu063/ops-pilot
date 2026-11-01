@@ -6,14 +6,15 @@ from .config import DEFAULT_CONFIG, DEFAULT_STATE, load, save
 
 def main():
     parser = argparse.ArgumentParser(description="Ops Pilot: one Docker app, reviewed repairs, verified health")
-    parser.add_argument("command", choices=("setup", "serve", "check", "freelance", "diagnostics", "setup-diagnostics"), nargs="?", default="serve")
+    parser.add_argument("command", choices=("setup", "serve", "check", "freelance", "diagnostics", "setup-diagnostics", "fleet", "check-fleet"), nargs="?", default="serve")
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     parser.add_argument("--state-dir", type=Path, default=DEFAULT_STATE)
     parser.add_argument("--port", type=int, default=8767)
     parser.add_argument("--ai-model", help="Optional installed local Ollama model. Advisory only; no auto download.")
     parser.add_argument("--ecosystem-service",help="Opt in to the event inbox for this exact service ID; source/read tokens come from private environment variables")
     parser.add_argument("--diagnostics-config", type=Path, help="Private read-only environment configuration; no credentials in JSON")
-    parser.add_argument("--tool", choices=('kubernetes','jenkins','aws','helm','argocd','prometheus','grafana'), help="One configured read-only collector")
+    parser.add_argument("--tool", choices=('docker', 'kubernetes','jenkins','github-actions','aws','helm','argocd','prometheus','grafana'), help="One configured read-only collector")
+    parser.add_argument("--fleet-config", type=Path, help="Optional private Coolify/native Docker fleet profile; no credentials in JSON")
     args = parser.parse_args()
     try:
         if args.command == 'setup-diagnostics':
@@ -38,6 +39,17 @@ def main():
             raise ValueError("Choose a port between 1024 and 65535")
         from .freelance import Workspace
         from .web import run
+        fleet = None
+        if args.fleet_config:
+            from .fleet import Fleet
+            fleet=Fleet(args.fleet_config,args.state_dir)
+        if args.command in ("fleet","check-fleet"):
+            if fleet is None: raise ValueError("Use --fleet-config with private optional provider profiles")
+            if args.command=="check-fleet":
+                result=fleet.poll(force=True);print(json.dumps(result,indent=2));fleet.close()
+                return 2 if any(i["status"]!="connected" for i in result["instances"]) else 1 if any(i["status"]=="open" for i in result["incidents"]) else 0
+            run(None,args.port,Workspace(args.state_dir),fleet=fleet)
+            return 0
         diagnostics = None
         if args.diagnostics_config:
             from .diagnostics import Diagnostics
@@ -49,7 +61,7 @@ def main():
             print(json.dumps(report, indent=2))
             return 2 if report['status'] == 'inconclusive' else 1 if report['status'] == 'findings' else 0
         if args.command == 'freelance':
-            run(None, args.port, Workspace(args.state_dir), diagnostics=diagnostics)
+            run(None, args.port, Workspace(args.state_dir), diagnostics=diagnostics,fleet=fleet)
             return 0
         from .service import Pilot
         config, _ = load(args.config)
@@ -63,7 +75,7 @@ def main():
         if args.ecosystem_service:
             from .ecosystem import EventHub
             hub=EventHub(pilot,args.state_dir,args.ecosystem_service)
-        run(pilot, args.port, Workspace(args.state_dir), hub, diagnostics)
+        run(pilot, args.port, Workspace(args.state_dir), hub, diagnostics, fleet)
         return 0
     except (ValueError, RuntimeError, OSError, EOFError) as exc:
         print("Ops Pilot could not continue:", str(exc))

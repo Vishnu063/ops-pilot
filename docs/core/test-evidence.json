@@ -1,0 +1,105 @@
+{
+  "kind": "current local tests; synthetic, not live infrastructure",
+  "unit": {
+    "attempted": 142,
+    "passed": 113,
+    "assertion_failures": 0,
+    "blocked_socket_errors": 25,
+    "docker_skipped": 4
+  },
+  "new_deterministic_tests": 18,
+  "preserved_coolify_tests": 41,
+  "commands": [
+    {
+      "command": "$ python -m unittest discover -s tests -v",
+      "exit_code": 1,
+      "log": "/tmp/core-check-0.log",
+      "tail": "D (errors=25, skipped=4)\nRead-only diagnostics: configure only an environment you are authorized to inspect. No connection runs now.\nCredentials use native CLI profiles or documented environment bindings; never paste tokens into this wizard.\nSaved privately. Add environment credential bindings if needed; then run diagnostics with --tool kubernetes\n"
+    },
+    {
+      "command": "$ python tests/browser_acceptance.py",
+      "exit_code": 1,
+      "log": "/tmp/core-check-1.log",
+      "tail": "n __init__\n    self.socket = socket.socket(self.address_family,\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/socket.py\", line 233, in __init__\n    _socket.socket.__init__(self, family, type, proto, fileno)\nPermissionError: [Errno 1] Operation not permitted\n"
+    },
+    {
+      "command": "$ python tests/coolify_browser.py",
+      "exit_code": 1,
+      "log": "/tmp/core-check-2.log",
+      "tail": "n __init__\n    self.socket = socket.socket(self.address_family,\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/socket.py\", line 233, in __init__\n    _socket.socket.__init__(self, family, type, proto, fileno)\nPermissionError: [Errno 1] Operation not permitted\n"
+    },
+    {
+      "command": "$ python tests/diagnostics_browser.py",
+      "exit_code": 1,
+      "log": "/tmp/core-check-3.log",
+      "tail": "n __init__\n    self.socket = socket.socket(self.address_family,\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/socket.py\", line 233, in __init__\n    _socket.socket.__init__(self, family, type, proto, fileno)\nPermissionError: [Errno 1] Operation not permitted\n"
+    },
+    {
+      "command": "$ python tests/ecosystem_browser.py",
+      "exit_code": 1,
+      "log": "/tmp/core-check-4.log",
+      "tail": "n __init__\n    self.socket = socket.socket(self.address_family,\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/socket.py\", line 233, in __init__\n    _socket.socket.__init__(self, family, type, proto, fileno)\nPermissionError: [Errno 1] Operation not permitted\n"
+    },
+    {
+      "command": "$ python tests/freelance_browser.py",
+      "exit_code": 1,
+      "log": "/tmp/core-check-5.log",
+      "tail": "n __init__\n    self.socket = socket.socket(self.address_family,\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/socket.py\", line 233, in __init__\n    _socket.socket.__init__(self, family, type, proto, fileno)\nPermissionError: [Errno 1] Operation not permitted\n"
+    },
+    {
+      "command": "$ python -m bandit -r ops_pilot -ll",
+      "exit_code": 1,
+      "log": "/tmp/core-check-6.log",
+      "tail": "/workspace/ops-venv/bin/python: No module named bandit\n"
+    },
+    {
+      "command": "$ python -m pip_audit",
+      "exit_code": 1,
+      "log": "/tmp/core-check-7.log",
+      "tail": "/workspace/ops-venv/bin/python: No module named pip_audit\n"
+    },
+    {
+      "command": "$ python -m pytest -q",
+      "exit_code": 1,
+      "log": "/tmp/core-check-8.log",
+      "tail": "/workspace/ops-venv/bin/python: No module named pytest\n"
+    },
+    {
+      "command": "$ python -m compileall -q ops_pilot tests",
+      "exit_code": 0,
+      "log": "/tmp/core-check-9.log",
+      "tail": ""
+    }
+  ],
+  "wheel_build": "passed offline --no-deps --no-build-isolation",
+  "javascript_scripts": 5,
+  "shell_syntax": "passed",
+  "remote_baseline_additional_files": [
+    {
+      "path": "ops_pilot/diagnostics.html",
+      "match": true,
+      "remote_sha256": "b28b54213162c1c83475f344f169795c726bf40d3f0812948091557f22f93c1c",
+      "snapshot_root_sha256": "b28b54213162c1c83475f344f169795c726bf40d3f0812948091557f22f93c1c"
+    },
+    {
+      "path": "ops_pilot/diagnostics.py",
+      "match": true,
+      "remote_sha256": "e713104b1da82e4fd57bdf57be45724a438444f2649ae10a0edcdbe2e756334d",
+      "snapshot_root_sha256": "e713104b1da82e4fd57bdf57be45724a438444f2649ae10a0edcdbe2e756334d"
+    },
+    {
+      "path": "ops_pilot/service.py",
+      "match": true,
+      "remote_sha256": "d92c493d2bfaa0ce3635f18ca27da12a494ff5c153f3e1eec1f6e63daad1ce6d",
+      "snapshot_root_sha256": "d92c493d2bfaa0ce3635f18ca27da12a494ff5c153f3e1eec1f6e63daad1ce6d"
+    },
+    {
+      "path": "tests/diagnostics_browser.py",
+      "match": true,
+      "remote_sha256": "a673c35dde48c3bf987690f6b43611c27640c882730aa005d5b8a4d929dbb2c0",
+      "snapshot_root_sha256": "a673c35dde48c3bf987690f6b43611c27640c882730aa005d5b8a4d929dbb2c0"
+    }
+  ],
+  "publication": "not published; no PR or new-head CI",
+  "historical_evidence": "kept separately; not validation of this continuation"
+}

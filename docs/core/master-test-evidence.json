@@ -1,0 +1,97 @@
+{
+  "kind": "current local master increment; synthetic and filesystem tests, not real infrastructure",
+  "unit": {
+    "attempted": 156,
+    "passed": 127,
+    "failed_assertions": 0,
+    "socket_errors_blocked": 25,
+    "docker_skipped": 4
+  },
+  "new_storage_tests": 9,
+  "new_docker_metrics_tests": 5,
+  "preserved_coolify_tests": 41,
+  "commands": [
+    {
+      "command": "$ python -m unittest discover -s tests -v",
+      "exit_code": 1,
+      "log": "/tmp/master-check-0.log",
+      "tail": "pt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/socket.py\", line 233, in __init__\n    _socket.socket.__init__(self, family, type, proto, fileno)\nPermissionError: [Errno 1] Operation not permitted\n\n----------------------------------------------------------------------\nRan 156 tests in 2.637s\n\nFAILED (errors=25, skipped=4)\n"
+    },
+    {
+      "command": "$ python tests/browser_acceptance.py",
+      "exit_code": 1,
+      "log": "/tmp/master-check-1.log",
+      "tail": "n __init__\n    self.socket = socket.socket(self.address_family,\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/socket.py\", line 233, in __init__\n    _socket.socket.__init__(self, family, type, proto, fileno)\nPermissionError: [Errno 1] Operation not permitted\n"
+    },
+    {
+      "command": "$ python tests/freelance_browser.py",
+      "exit_code": 1,
+      "log": "/tmp/master-check-2.log",
+      "tail": "n __init__\n    self.socket = socket.socket(self.address_family,\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/socket.py\", line 233, in __init__\n    _socket.socket.__init__(self, family, type, proto, fileno)\nPermissionError: [Errno 1] Operation not permitted\n"
+    },
+    {
+      "command": "$ python tests/ecosystem_browser.py",
+      "exit_code": 1,
+      "log": "/tmp/master-check-3.log",
+      "tail": "n __init__\n    self.socket = socket.socket(self.address_family,\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/socket.py\", line 233, in __init__\n    _socket.socket.__init__(self, family, type, proto, fileno)\nPermissionError: [Errno 1] Operation not permitted\n"
+    },
+    {
+      "command": "$ python tests/diagnostics_browser.py",
+      "exit_code": 1,
+      "log": "/tmp/master-check-4.log",
+      "tail": "n __init__\n    self.socket = socket.socket(self.address_family,\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/socket.py\", line 233, in __init__\n    _socket.socket.__init__(self, family, type, proto, fileno)\nPermissionError: [Errno 1] Operation not permitted\n"
+    },
+    {
+      "command": "$ python tests/coolify_browser.py",
+      "exit_code": 1,
+      "log": "/tmp/master-check-5.log",
+      "tail": "n __init__\n    self.socket = socket.socket(self.address_family,\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/socket.py\", line 233, in __init__\n    _socket.socket.__init__(self, family, type, proto, fileno)\nPermissionError: [Errno 1] Operation not permitted\n"
+    },
+    {
+      "command": "$ python -m bandit -r ops_pilot -ll",
+      "exit_code": 1,
+      "log": "/tmp/master-check-6.log",
+      "tail": "/workspace/ops-venv/bin/python: No module named bandit\n"
+    },
+    {
+      "command": "$ python -m pip_audit",
+      "exit_code": 1,
+      "log": "/tmp/master-check-7.log",
+      "tail": "/workspace/ops-venv/bin/python: No module named pip_audit\n"
+    },
+    {
+      "command": "$ python -m pytest -q",
+      "exit_code": 1,
+      "log": "/tmp/master-check-8.log",
+      "tail": "/workspace/ops-venv/bin/python: No module named pytest\n"
+    },
+    {
+      "command": "$ python -m compileall -q ops_pilot tests",
+      "exit_code": 0,
+      "log": "/tmp/master-check-9.log",
+      "tail": ""
+    }
+  ],
+  "remote_heads": {
+    "main": "349aa13e4d3be33665bd8335636fc315e71b5ee2",
+    "feature/coolify-integration": "349aa13e4d3be33665bd8335636fc315e71b5ee2"
+  },
+  "additional_real_remote_preimages": [
+    {
+      "path": "ops_pilot/runtime.py",
+      "match": true,
+      "sha256": "05cd9bdd3d502d10fdf7a80d997ee71dff1e67370d38c0bea5279257c778c59f"
+    },
+    {
+      "path": "ops_pilot/freelance.py",
+      "match": true,
+      "sha256": "eba0ef63b1a9fe7dad07af853a522b81c4acc18661eec1dec4033720f7ffa5aa"
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "match": true,
+      "sha256": "55e2af91a43cc086f0e06689240f8ed1578d64a13f0e2cc962621cfce2cc7a7f"
+    }
+  ],
+  "publication": "NOT VERIFIED; no PR/new-head CI"
+}

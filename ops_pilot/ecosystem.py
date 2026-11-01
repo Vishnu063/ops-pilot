@@ -12,6 +12,7 @@ import threading
 import time
 from triage.ecosystem import validate, envelope, diagnose, verify
 from triage.integrations import redact, ToolAdapter
+from .storage import private_database, PrivateConnection
 
 
 def digest(value):return hashlib.sha256(json.dumps(value,sort_keys=True).encode()).hexdigest()
@@ -24,7 +25,6 @@ class EventHub:
         self.prom_url=os.environ.get('OPS_PILOT_PROMETHEUS_URL')
         self.prom_job=os.environ.get('OPS_PILOT_PROM_JOB','ecosystem-app')
         self.pilot=pilot;self.service=service;self.root=Path(directory)/'ecosystem'
-        self.root.mkdir(mode=0o700,parents=True,exist_ok=True);self.root.chmod(0o700)
         self.path=self.root/'events.sqlite3';self.lock=threading.RLock()
         self.binding=digest({'config':pilot.config,'health':pilot.health,'prometheus_url':self.prom_url,'prometheus_job':self.prom_job,'service':self.service})
         self.keys={name:os.environ.get('OPS_PILOT_EVENTS_'+name.upper(),'') for name in ('cloudlaunch','platform','alertmanager','labs')}
@@ -41,7 +41,7 @@ class EventHub:
             CREATE TRIGGER IF NOT EXISTS audit_no_update BEFORE UPDATE ON audit BEGIN SELECT RAISE(ABORT,'audit is append only'); END;
             CREATE TRIGGER IF NOT EXISTS audit_no_delete BEFORE DELETE ON audit BEGIN SELECT RAISE(ABORT,'audit is append only'); END;''')
         self.path.chmod(0o600)
-    def connect(self):return sqlite3.connect(self.path,timeout=10)
+    def connect(self):return sqlite3.connect(private_database(self.path),timeout=10,factory=PrivateConnection)
     def authorized(self,header,read=False):
         supplied=header.removeprefix('Bearer ') if header.startswith('Bearer ') else ''
         keys={'reader':self.read_key} if read else self.keys
@@ -155,7 +155,8 @@ class EventHub:
         if not isinstance(payload,dict) or set(payload)!={'incident_id','revision','action','plan_id'} or payload['action'] not in ('investigate','plan','approve','reject','apply','verify'):
             raise ValueError('Select a bounded existing incident operation')
         import fcntl
-        with (self.root/'operation.lock').open('a') as process_lock:
+        lock_path=private_database(self.root/'operation.lock')
+        with os.fdopen(os.open(lock_path,os.O_RDWR|os.O_NOFOLLOW|os.O_NONBLOCK),'a') as process_lock:
             try:fcntl.flock(process_lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
             except BlockingIOError:raise ValueError('Another incident operation is running') from None
             try:return self._action(payload,actor)

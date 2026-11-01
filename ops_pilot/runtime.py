@@ -1,28 +1,25 @@
 """Private durable monitor controls and bounded alert history, scoped to one app."""
 import hashlib
 import json
-import os
 from pathlib import Path
 import sqlite3
 import time
+from .storage import private_database, PrivateConnection
 
 
 class Runtime:
     def __init__(self, directory, config):
         directory = Path(directory).expanduser()
-        directory.mkdir(parents=True, exist_ok=True, mode=0o700)
         self.path = directory / 'monitor.sqlite3'
         self.key = hashlib.sha256(json.dumps([config[k] for k in
             ('docker_context', 'container', 'health_url')]).encode()).hexdigest()
-        # Create privately before SQLite opens it (also protects crash journals).
-        fd = os.open(self.path, os.O_CREAT | os.O_WRONLY, 0o600)
-        os.close(fd)
+        private_database(self.path)
         with self.connect() as db:
             db.execute('CREATE TABLE IF NOT EXISTS controls (target TEXT PRIMARY KEY, payload TEXT NOT NULL)')
             db.execute('CREATE TABLE IF NOT EXISTS alerts (id INTEGER PRIMARY KEY, target TEXT, time REAL, event TEXT, delivery TEXT)')
 
     def connect(self):
-        return sqlite3.connect(self.path)
+        return sqlite3.connect(private_database(self.path), factory=PrivateConnection)
 
     def load(self):
         with self.connect() as db:

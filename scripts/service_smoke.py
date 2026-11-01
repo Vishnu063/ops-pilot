@@ -9,6 +9,7 @@ import tempfile
 import threading
 import time
 import urllib.request
+from ops_pilot.config import save
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -31,9 +32,9 @@ def run():
     with tempfile.TemporaryDirectory(prefix='.ops-pilot-service-', dir=Path.home()) as home:
         env = {**os.environ, 'HOME': home}
         config = Path(home) / '.config/ops-pilot/config.json'
-        config.parent.mkdir(parents=True)
-        config.write_text(json.dumps(dict(name='Systemd CI app', docker_context='default',
-            container='disposable-service-lab', health_url=f'http://127.0.0.1:{http_server.server_port}/', interval_seconds=15)))
+        save(config, dict(name='Systemd CI app', docker_context='default',
+            container='disposable-service-lab', health_url=f'http://127.0.0.1:{http_server.server_port}/', interval_seconds=15))
+        assert config.stat().st_mode & 0o777 == 0o600
         origin = 'http://127.0.0.1:8767'
         def fresh_token(previous=None):
             for _ in range(80):

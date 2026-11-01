@@ -1,0 +1,88 @@
+{
+  "date": "2026-10-30",
+  "reviewed_local_base": "6f646892d5b2c1c9811b9b72914abfb631f6ed13",
+  "remote_base": "349aa13e4d3be33665bd8335636fc315e71b5ee2",
+  "official_source": "coollabsio/coolify@70c1bcb1381de7d42fd290e6cd50bf9a5bcf714d (v4.5.3)",
+  "synthetic": true,
+  "real_instance_accessed": false,
+  "real_recovery_authorized": false,
+  "real_mutations": 0,
+  "baseline": {
+    "attempted": 115,
+    "passed": 86,
+    "socket_errors": 25,
+    "docker_skips": 4
+  },
+  "after_fixes": {
+    "attempted": 124,
+    "passed": 95,
+    "socket_errors": 25,
+    "docker_skips": 4,
+    "assertion_failures": 0,
+    "deterministic_coolify_tests_passed": 41
+  },
+  "defect_reproduction_on_old_code": {
+    "targeted": 7,
+    "assertion_failures": 6,
+    "missing_receipt_error": 1
+  },
+  "checks_passed": [
+    "Python compileall",
+    "all five dashboard JavaScript syntax checks",
+    "shell syntax",
+    "workflow YAML/read-only permissions/no pull_request_target",
+    "immutable native dependency pin",
+    "no exec/eval in new connector path",
+    "git diff --check"
+  ],
+  "browser": "Attempted; blocked by PermissionError creating mock HTTP socket",
+  "source_scanner": "Bandit unavailable; offline installation found no distribution; CI scanner retained",
+  "dependency_vulnerabilities": "Not cleared; external vulnerability scanner unavailable",
+  "github_ci": {
+    "new_implementation": "not run; no implementation publish confirmed",
+    "historical_remote_sha": "349aa13e4d3be33665bd8335636fc315e71b5ee2",
+    "historical_successful_checks": 8,
+    "attributed_to_fixes": false
+  },
+  "live_coolify_receipts": [],
+  "remaining": [
+    "GitHub publish/PR/new-head CI",
+    "browser and HTTP acceptance in an environment permitting sockets",
+    "authorized disposable v4.5.3 read-only acceptance",
+    "separate exact-application/action authorization before any real recovery",
+    "production/container dependency and isolation review"
+  ],
+  "browser_attempts": [
+    {
+      "script": "browser_acceptance.py",
+      "exit_code": 1,
+      "socket_permission_blocked": true
+    },
+    {
+      "script": "freelance_browser.py",
+      "exit_code": 1,
+      "socket_permission_blocked": true
+    },
+    {
+      "script": "ecosystem_browser.py",
+      "exit_code": 1,
+      "socket_permission_blocked": true
+    },
+    {
+      "script": "diagnostics_browser.py",
+      "exit_code": 1,
+      "socket_permission_blocked": true
+    },
+    {
+      "script": "coolify_browser.py",
+      "exit_code": 1,
+      "socket_permission_blocked": true
+    }
+  ],
+  "publication": {
+    "tree_write": "timed out without result after 15 seconds",
+    "branch_update_attempted": false,
+    "remote_branch_verified": "349aa13e4d3be33665bd8335636fc315e71b5ee2",
+    "open_prs": []
+  }
+}

@@ -7,7 +7,7 @@ name = "ops-pilot"
 version = "0.2.0"
 description = "A focused Docker incident workflow with reviewed repairs and application verification"
 requires-python = ">=3.11"
-dependencies = ["devops-triage-assistant @ https://github.com/Vishnu063/devops-triage-assistant/archive/d00b4fa5b861bd8a24935725300fe1d0a0ac538a.zip"]
+dependencies = ["devops-triage-assistant @ https://github.com/Vishnu063/devops-triage-assistant/archive/d466ca4e1cdd93d02274145c0b12e73f76863b6d.zip"]
 
 [project.scripts]
 ops-pilot = "ops_pilot.cli:main"
@@ -16,5 +16,5 @@ ops-pilot = "ops_pilot.cli:main"
 include = ["ops_pilot*"]
 
 [tool.setuptools.package-data]
-ops_pilot = ["dashboard.html", "freelance.html", "ecosystem.html", "diagnostics.html"]
+ops_pilot = ["dashboard.html", "freelance.html", "ecosystem.html", "diagnostics.html", "coolify.html"]
 

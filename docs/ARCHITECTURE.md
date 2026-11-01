@@ -86,3 +86,43 @@ flowchart LR
 ```
 
 The diagnostics desk has no repair endpoint and cannot issue shell commands from requests. Native read credentials, source/read keys and owner approval are different capabilities. Environment IDs separate reports for a trusted owner; they are not a multi-tenant isolation claim. See [self-hosting](SELF-HOSTING.md).
+
+## Optional application fleet / Coolify
+
+```mermaid
+flowchart TD
+  Owner[Single local owner session] --> Web[Existing loopback HTTP dashboard]
+  Web --> Legacy[Existing Docker / agency / diagnostic routes]
+  Web --> Fleet[Optional fleet desk and bounded scheduler]
+  Fleet --> Store[Private SQLite incidents / plans / audit / delivery status]
+  Fleet --> Coolify[Documented Coolify API provider]
+  Fleet --> Native[Separate native Docker Pilot profiles]
+  Native --> Engine[Existing pinned triage engine]
+  Coolify --> Read[Discovery / runtime / deployments / bounded logs]
+  Coolify --> Plan[Exact plan and preconditions]
+  Plan --> Approve[Separate owner approval]
+  Approve --> Execute[Consume approval before exact POST]
+  Execute --> Verify[Receipt deployment + runtime + sustained endpoint]
+  Verify --> Report[Evidence and incident report]
+  Fleet --> Notify[Optional minimal Telegram adapter]
+```
+
+No provider is mandatory. Coolify reads are independent from native Docker mutations. Configured app IDs/instance UUIDs bind actions; unknown versions cannot mutate. Shared tenant hosting and arbitrary command execution are absent. Additional Docker profiles retain the original engine's verification rather than translating remote API approvals. See [fleet runbook](coolify/OPERATIONS.md) for trust boundaries, cross-controller races, crash reconciliation and retention limits.
+
+## Owner-only storage and optional resource evidence
+
+```mermaid
+flowchart LR
+  Owner[Local owner session] --> Desk[Existing loopback dashboard and CLI]
+  Desk --> Reads[Scoped read-only collectors]
+  Reads --> Evidence[Bounded redacted reports]
+  Evidence --> Storage[Private SQLite and audit history]
+  Desk --> Plan[Exact-target recovery plan]
+  Plan --> Approval[Separate expiring single-use approval]
+  Approval --> Repair[Fixed allowlisted executor]
+  Repair --> Verify[Identity and sustained endpoint verification]
+```
+
+Ops Pilot's monitor, diagnostics, fleet and agency databases now share private-file preparation. Linked/non-regular database or journal files and symlinked directory components are refused; the leaf state directory and files are restricted to 0700/0600. Preparation is repeated before each connection. SQLite transaction contexts close connections deterministically, including error/rollback paths. This is POSIX owner isolation, not tenant isolation: a process under the same UID or root can still race or alter state. The pinned native engine's storage is not replaced by this helper.
+
+The optional `docker` diagnostics profile uses the existing immutable-container/daemon adapter. `metrics: true` adds a fixed bounded `docker container stats` read against that container ID and reinspects identity afterwards. It reports Docker CPU percentage relative to one logical CPU and memory percentage/usage relative to the reported limit. One sample is evidence, not proof of sustained resource exhaustion or successful recovery. Stats failures remain inconclusive. No stats or diagnostic operation can approve or execute repairs.
