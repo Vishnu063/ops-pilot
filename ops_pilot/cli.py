@@ -6,7 +6,7 @@ from .config import DEFAULT_CONFIG, DEFAULT_STATE, load, save
 
 def main():
     parser = argparse.ArgumentParser(description="Ops Pilot: one Docker app, reviewed repairs, verified health")
-    parser.add_argument("command", choices=("setup", "serve", "check", "freelance", "diagnostics", "setup-diagnostics", "fleet", "check-fleet"), nargs="?", default="serve")
+    parser.add_argument("command", choices=("setup", "serve", "check", "monitor", "freelance", "diagnostics", "setup-diagnostics", "fleet", "check-fleet"), nargs="?", default="serve")
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     parser.add_argument("--state-dir", type=Path, default=DEFAULT_STATE)
     parser.add_argument("--port", type=int, default=8767)
@@ -15,6 +15,7 @@ def main():
     parser.add_argument("--diagnostics-config", type=Path, help="Private read-only environment configuration; no credentials in JSON")
     parser.add_argument("--tool", choices=('docker', 'kubernetes','jenkins','github-actions','aws','helm','argocd','prometheus','grafana'), help="One configured read-only collector")
     parser.add_argument("--fleet-config", type=Path, help="Optional private Coolify/native Docker fleet profile; no credentials in JSON")
+    parser.add_argument("--headless", action="store_true", help="Run monitor without a dashboard (monitor command only)")
     args = parser.parse_args()
     try:
         if args.command == 'setup-diagnostics':
@@ -62,6 +63,34 @@ def main():
             return 2 if report['status'] == 'inconclusive' else 1 if report['status'] == 'findings' else 0
         if args.command == 'freelance':
             run(None, args.port, Workspace(args.state_dir), diagnostics=diagnostics,fleet=fleet)
+            return 0
+        if args.command == "monitor":
+            if not args.headless: raise ValueError("Use monitor --headless for a private scheduled monitor")
+            import fcntl, signal, threading
+            args.state_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
+            lock_path=args.state_dir / 'headless.lock'
+            lock=lock_path.open('a+')
+            try: fcntl.flock(lock, fcntl.LOCK_EX|fcntl.LOCK_NB)
+            except BlockingIOError:
+                lock.close()
+                raise ValueError("A monitor already owns this profile state directory")
+            pilot = None
+            stopped=threading.Event()
+            signal.signal(signal.SIGTERM, lambda *_: stopped.set())
+            signal.signal(signal.SIGINT, lambda *_: stopped.set())
+            try:
+                config, _ = load(args.config)
+                from .service import Pilot
+                pilot = Pilot(config, args.state_dir, ai_model=args.ai_model)
+                print(json.dumps({"event":"monitor_started","container":config['container'],"interval_seconds":config['interval_seconds'],"state_dir":str(args.state_dir)},separators=(',',':')),flush=True)
+                while not stopped.is_set():
+                    pilot.tick()
+                    state=pilot.state()
+                    print(json.dumps({"event":"observation","checked_at":state['monitor']['checked_at'],"healthy":state['monitor']['healthy'],"container":state['container']},separators=(',',':')),flush=True)
+                    stopped.wait(config['interval_seconds'])
+            finally:
+                if pilot is not None: pilot.close()
+                lock.close()
             return 0
         from .service import Pilot
         config, _ = load(args.config)
